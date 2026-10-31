@@ -25,6 +25,7 @@ function openSection(name: string) { if(name==='个人主页'){router.push('/my/
    <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
    <div class="account"><img :src="'/api/profile/avatar?v='+avatarVersion" alt=""><span>{{ currentUser }} · 已登录</span><button class="logout-button" @click="accountAction">退出登录</button></div>
   </header></Teleport>
+  <div v-if="currentUser" class="page-content">
   <section v-if="currentUser && route.path==='/'" class="welcome">
    <p class="eyebrow"><span></span> SHANDONG UNIVERSITY · CAMPUS LIFE</p>
    <h1>在山大，<br>遇见生活的<span>更多可能。</span></h1>
@@ -33,6 +34,7 @@ function openSection(name: string) { if(name==='个人主页'){router.push('/my/
   </section>
   <RouterView v-if="currentUser && route.path!=='/'" />
   <footer v-if="currentUser"><div><span class="location-dot"></span>中国 · 山东大学<small>每一份热爱，都值得在这里相遇</small></div><span class="footer-note">SDU SMART LIFE <i> / </i> 让校园生活更有温度</span></footer>
+  </div>
   <div v-if="!checking && !currentUser" class="auth-overlay"><section class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title"><p class="auth-kicker">山东大学 · SDU SMART LIFE</p><h2 id="auth-title">{{ registering ? '注册校园账号' : '登录智慧校园' }}</h2><form @submit.prevent="submitAuth"><label>用户名<input v-model="username" required pattern="[a-zA-Z0-9_-]{3,32}" autocomplete="username" placeholder="3–32 位字母、数字、下划线或短横线"></label><label>密码<input v-model="password" required type="password" minlength="8" maxlength="64" :autocomplete="registering?'new-password':'current-password'" placeholder="8–64 位密码"></label><p role="status" class="auth-error">{{ error }}</p><button class="auth-submit" :disabled="busy">{{ busy?'处理中…':registering?'注册':'登录' }}</button></form><button class="auth-switch" @click="registering=!registering;error=''">{{ registering?'已有账号？去登录':'没有账号？立即注册' }}</button></section></div>
   <div v-if="notice" class="notice" role="status">{{ notice }}<button aria-label="关闭提示" @click="notice = ''">×</button></div>
  </main>
@@ -44,5 +46,7 @@ function openSection(name: string) { if(name==='个人主页'){router.push('/my/
 .auth-overlay{position:fixed;inset:0;background:#07121cb3;backdrop-filter:blur(8px);z-index:30;display:grid;place-items:center;padding:20px}.auth-panel{position:relative;width:min(440px,100%);padding:42px;background:#fffaf2;color:#283b3b;border-radius:12px;box-shadow:0 20px 80px #0005}.auth-kicker{font-size:10px;letter-spacing:3px;color:#9b7952}.auth-panel h2{font-size:28px;margin:20px 0 30px}.auth-panel label{display:block;font-size:13px;margin:18px 0}.auth-panel input{display:block;width:100%;margin-top:9px;border:1px solid #d7d7cf;background:white;border-radius:4px;padding:13px 10px;font:inherit}.auth-close{position:absolute;right:18px;top:14px;border:0;background:none;font-size:25px;color:#677}.auth-error{font-size:12px;color:#9b3d35;min-height:18px}.auth-submit{width:100%;padding:13px;background:#304b49;color:white;border:0;border-radius:4px}.auth-submit:disabled{opacity:.5}.auth-switch{display:block;margin:22px auto 0;border:0;background:none;color:#8c6b44;font-size:13px}
 .session-check{margin:auto}.logout-button{border:1px solid #ffffff60;background:transparent;color:white;padding:7px 10px;border-radius:4px;font-size:11px}.navigation{flex-shrink:0;z-index:20;background:transparent;backdrop-filter:none;margin:0;padding:0 5%;border-bottom:0;position:fixed;left:0;right:0;top:0;transform:none;will-change:auto}.auth-overlay{background:linear-gradient(110deg,#172d3c55,#172d3c22);backdrop-filter:none}.auth-panel{background:#fffaf2f5}.auth-panel h2{font-size:28px}
 .has-session{padding-top:106px}@media(max-width:850px){.has-session{padding-top:125px}}
+/* Navigation and business content occupy separate viewport regions. */
+html,body,#app{height:100%;overflow:hidden}.landing{height:100dvh;min-height:0;overflow:hidden}.page-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;scrollbar-gutter:stable}.page-content>.welcome{flex:1;flex-shrink:0}.page-content>footer{flex-shrink:0}.page-content>.market,.page-content>.my-products{flex:1 0 auto}.navigation{height:106px;max-height:106px;overflow:hidden}@media(max-width:850px){.navigation{height:125px;max-height:125px}}
 </style>
 
