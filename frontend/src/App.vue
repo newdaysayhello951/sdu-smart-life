@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 const route=useRoute(), router=useRouter();
@@ -7,11 +7,14 @@ const checking=ref(true);
 const authOpen = ref(false), registering = ref(false), username = ref(''), password = ref(''), currentUser = ref(''), error = ref(''), busy = ref(false);
 const api = axios.create({withCredentials:true});
 async function csrf(){ const {data}=await api.get('/api/auth/csrf'); return {'X-XSRF-TOKEN':data.token}; }
-async function restoreSession(){checking.value=true;try{currentUser.value=(await api.get('/api/auth/me')).data.username;}catch{currentUser.value='';}finally{checking.value=false;authOpen.value=!currentUser.value;}}
+async function restoreSession(){checking.value=true;try{currentUser.value=(await api.get('/api/auth/me')).data.username;}catch{currentUser.value='';}finally{checking.value=false;authOpen.value=!currentUser.value;refreshUnread();}}
 onMounted(()=>{restoreSession();window.addEventListener('profile-updated',()=>{restoreSession();avatarVersion.value++;});});
-const avatarVersion=ref(0);
+const avatarVersion=ref(0),unreadCount=ref(0);let notificationTimer:ReturnType<typeof setInterval>|undefined;
+async function refreshUnread(){if(!currentUser.value){unreadCount.value=0;return;}try{unreadCount.value=(await api.get('/api/notifications/unread')).data.count;}catch{}}
+onMounted(()=>{refreshUnread();notificationTimer=setInterval(()=>{if(!document.hidden)refreshUnread();},5000);window.addEventListener('notifications-updated',refreshUnread);});
+onUnmounted(()=>{if(notificationTimer)clearInterval(notificationTimer);window.removeEventListener('notifications-updated',refreshUnread);});
 axios.interceptors.response.use(r=>r,e=>{if(e.response?.status===401){currentUser.value='';authOpen.value=true;}return Promise.reject(e);});
-async function submitAuth(){ busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{currentUser.value=username.value;authOpen.value=false;}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
+async function submitAuth(){ busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{currentUser.value=username.value;authOpen.value=false;refreshUnread();}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
 async function accountAction(){if(!currentUser.value){authOpen.value=true;return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});currentUser.value='';authOpen.value=true;router.replace('/');}catch{notice.value='退出失败，请稍后重试';}}
 const notice = ref('');
 function openSection(name: string) { if(name==='校园地图'){router.push('/campus');return;}  if(name==='个人主页'){router.push('/my/products');return;}  if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
@@ -23,7 +26,7 @@ function openSection(name: string) { if(name==='校园地图'){router.push('/cam
   <Teleport to="body"><header v-if="!checking && currentUser" class="navigation">
    <RouterLink class="brand" to="/" aria-label="智慧校园首页"><span class="brand-mark">山大</span><span>智慧校园<small>SDU SMART LIFE</small></span></RouterLink>
    <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
-   <div class="account"><img :src="'/api/profile/avatar?v='+avatarVersion" alt=""><span>{{ currentUser }} · 已登录</span><button class="logout-button" @click="accountAction">退出登录</button></div>
+   <div class="account"><RouterLink class="notification-bubble" to="/notifications" :aria-label="'消息通知，未读'+unreadCount+'条'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="16" cy="10" r="1" fill="currentColor"/></svg><b v-if="unreadCount>0">{{Math.min(99,unreadCount)}}</b></RouterLink><img :src="'/api/profile/avatar?v='+avatarVersion" alt=""><span>{{ currentUser }} · 已登录</span><button class="logout-button" @click="accountAction">退出登录</button></div>
   </header></Teleport>
   <div v-if="currentUser" class="page-content">
   <section v-if="currentUser && route.path==='/'" class="welcome">
@@ -48,5 +51,6 @@ function openSection(name: string) { if(name==='校园地图'){router.push('/cam
 .has-session{padding-top:106px}@media(max-width:850px){.has-session{padding-top:125px}}
 /* Navigation and business content occupy separate viewport regions. */
 html,body,#app{height:100%;overflow:hidden}.landing{height:100dvh;min-height:0;overflow:hidden}.page-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;scrollbar-gutter:stable}.page-content>.welcome{flex:1;flex-shrink:0}.page-content>footer{flex-shrink:0}.page-content>.market,.page-content>.my-products{flex:1 0 auto}.navigation{height:106px;max-height:106px;overflow:hidden}@media(max-width:850px){.navigation{height:125px;max-height:125px}}
+.notification-bubble{position:relative;display:inline-flex;color:white;text-decoration:none;margin-right:12px}.notification-bubble svg{width:28px;height:28px}.notification-bubble b{position:absolute;right:-10px;top:-7px;min-width:17px;height:17px;border-radius:10px;padding:1px 4px;background:#d84b46;color:white;font-size:10px;text-align:center;line-height:15px}
 </style>
 

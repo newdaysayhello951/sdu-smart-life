@@ -1,75 +1,39 @@
 # SDU Smart Life
-校园二手交易与社区平台，正在从 Flask 迁移至 Vue 3 + Spring Boot。
-
-## 当前状态
-已完成工程基础、校园首页和用户注册/登录/退出。商品列表、搜索、分页及详情已接入；发布、地图及交易功能仍待迁移。
+Vue 3 + TypeScript + Spring Boot + MyBatis + MySQL校园牵线平台。以信息发布、校园交流及私聊联系为主，双方自行约定线下交接，不处理付款、订单或收货确认。
 
 ## 本地运行
-需要 JDK 21+、Maven 3.9+、Node.js 22。
+需要JDK21+、Maven3.9+、Node22、MySQL8。创建utf8mb4数据库sdu_smart_life，设置DB_PASSWORD；按需设置DB_USER、DB_URL。
+后端：`mvn -f backend/pom.xml spring-boot:run`。
+前端：进入frontend执行 `npm ci`、`npm run dev`，访问 http://127.0.0.1:5173 。
+Flyway自动升级数据库。未登录展示登录注册入口；当前服务端内存会话重启后需重新登录。
 
-后端：`cd backend` 后执行 `mvn spring-boot:run`。
-前端：`cd frontend` 后执行 `npm ci`、`npm run dev`。
-访问 http://127.0.0.1:5173，后端端口为 8080，健康检查 `/actuator/health`。
+## 主要页面
+- `/market`：出售与求购两块轮播，每次加载3条；支持触摸/鼠标滑动、横向滚轮、前后按钮和进度点。
+- `/market/{id}`：发布者头像、用户名和用户ID，联系发布者进入私聊。
+- `/my/products`：自己的资料与发布管理。可发布出售或求购、上传图片、编辑和下架；求购参考图可选。
+- `/people/{id}`：独立公开主页，展示资料及出售/求购，无管理控件。查看自己自动返回管理页。
+- `/messages`、`/messages/{id}`：私聊列表和双向文字/Emoji消息，每3秒刷新，消息分页读取。
+- `/notifications`：私信及校园回复通知、未读标记、单条已读和一键已读；顶部气泡每5秒更新，99及以上显示99。
+- `/campus`：高清校园图片地图、134个热点、地点问答、图文回复及完整对话。
 
-## 目录
-- backend：Java 服务，编译目标 Java 21。
-- frontend：Vue 前端；public/assets/legacy 保留可复用美术资源，旧 CSS/JS 已清理。
-- 原始 Flask 参考代码已从当前版本删除，迁移对照可查看 Git 历史。
-- docs/changes：每次推送的修改说明，文件名与该次提交主题一致。
+## 数据与权限
+所有业务字段、用户头像、商品图片、讨论附件、求购、私聊、通知和已读状态均存MySQL。
+固定背景、校园规划图等属于系统美术资源，仍由前端静态托管。运行不依赖旧上传目录。
+图片读取需要登录；业务关系使用稳定用户ID，改名后商品、消息作者、对方名称和通知名称同步。
+私聊只允许会话双方读写，主页仅公开指定资料，无密码或编辑接口。
+旧交易API、页面及入口已退役；历史trade_order表和商品原状态完整保留，不自动取消、重上架或删除。历史商品缺少可靠发布者映射时不猜测身份，联系入口不可用。
+数据库备份应包含BLOB。数据库密码、业务数据、依赖、日志和本地环境不提交Git。
 
-## Git 约定
-使用功能分支，提交前检查构建和差异；不提交密码、依赖目录、日志或本地环境。
-每批推送使用唯一提交主题，附上同名 Markdown 说明，记录范围、验证和待办。
+## 迁移工具
+安装PyMySQL、设置DB_PASSWORD，运行 `python scripts/import_legacy_products.py` 只读旧test库，将商品及图片导入新库。
+文件存储旧版本可先运行 `python scripts/migrate_images_to_database.py`，核对入库后原文件保留本地备份。
+旧Flask应用、HTML、CSS、JS已从当前树清理，可查Git历史。scripts内Python仅为迁移及回归工具。
 
-资源来源：https://gitee.com/haha_49_0/sdu-database-experiment-three.git 。保留来源说明；原仓库资源的授权范围仍需核实。
+## 验证
+启动前后端后，运行 `python scripts/run_regression.py`，执行9组活跃回归并在任一失败时返回非零。
+覆盖认证与CSRF、改名关联、资料/头像、商品图像与事务、市场分页、校园问答、公开主页、双向私聊、并发创建会话、通知读状态与越权边界。
+脚本会创建专用随机测试账号、讨论及消息，部分测试商品会下架；不修改真实用户资料。
 
-## 用户认证配置
-先创建独立 MySQL 数据库 `sdu_smart_life`（utf8mb4），启动前设置环境变量 `DB_PASSWORD`；可通过 `DB_USER`、`DB_URL` 覆盖连接配置。密码不写入仓库。
-Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未导入，请注册新账号。
-用户名为 3–32 位字母、数字、下划线或短横线，密码 8–64 位。当前使用服务端 HttpSession，Redis 会话将在后续接入。
-运行 `python scripts/check_auth.py` 可验证认证、会话隔离和 CSRF（会创建一个唯一测试账号）。
-
-## 商品迁移与验证
-访问 `/market` 浏览商品，`/market/{id}` 查看详情，匿名用户可浏览。
-启动后端让 Flyway 创建 product 表，再安装 PyMySQL 并设置 `DB_PASSWORD`，执行 `python scripts/import_legacy_products.py`。
-脚本只读原 `test` 库；目标为独立 `sdu_smart_life` 库，按 legacy_id 去重。重复执行保留目标已有商品，不覆盖后续编辑。
-旧地点编号冲突时留空，页面显示待补充。无有效价格的商品跳过并输出报告。
-图片导出至 `frontend/public/uploads/legacy-products`，不提交用户上传数据，部署前需执行导入，并将图片目录一同部署。
-执行 `python scripts/check_products.py` 验证商品接口、搜索、分页与图片，需要已导入商品及已启动的前后端。
-
-## 商品发布管理
-登录后点击个人主页进入 `/my/products`，支持发布及下架自己的商品。历史商品没有强行分配给新用户。发布后可编辑商品及上传图片；未上传时使用默认图。旧 Flask 模板、Python 应用、CSS、JS 已删除；scripts 下 Python 文件为当前使用的迁移及回归工具，不参与应用运行。
-
-## 商品图片
-在我的发布中上传JPEG/PNG图片，单张不超过5MB、1600万像素。后端解码后重新编码PNG，使用随机文件名；只能修改自己的在售商品。
-通过 `UPLOAD_DIR` 指定持久化目录，默认工作目录下 uploads；部署时需挂载并备份。此目录不进入Git。
-商品编辑使用 PUT /api/my/products/{id}；图片上传使用 POST /api/my/products/{id}/image。
-`python scripts/check_product_images.py` 检查编辑、上传、无效图片和越权拒绝；会保留已下架的回归商品与测试图片。
-当前替换图片后旧文件保留，后续需增加引用核对清理，避免误删仍被使用的文件。
-
-## 登录入口与首次发布
-未登录只显示登录注册表单，登录后可使用商品与图片接口；页面刷新查询服务端会话恢复状态，退出立即回到登录入口。右上角固定显示当前账号。首次发布从表单选择图片，使用 multipart `/api/my/products/publish` 一次提交，图片失败事务回滚。运行 `python scripts/check_login_publish.py` 验证最新行为。旧匿名商品回归断言不再适用。
-
-## 当前存储方案（替代上述文件存储说明）
-所有用户业务字段及商品图片均存MySQL。product_image保存图片BLOB和MIME，通过登录保护的 /api/images/product/{id} 读取。替换图片更新同一行，不写磁盘。
-Flyway V4自动建表。旧文件版本运行 `python scripts/migrate_images_to_database.py` 导入；旧test库导入运行 `python scripts/import_legacy_products.py`，现在直接写数据库图片。
-本地旧文件暂保留备份，不参与运行，不进入Git。UPLOAD_DIR配置已移除，备份数据库需包含BLOB。
-个人主页新增昵称、签名和地点保存。运行 `python scripts/check_profile.py` 验证。
-
-## 完整资料
-个人主页点击带山大与无脸男元素的按钮编辑用户名、昵称、QQ、个性签名、宿舍楼及头像。用户名即登录账号；关联以用户ID保持，改名不丢失商品归属，已登录会话同步名称。头像存MySQL，默认头像复用原素材。导航固定顶部。文字与头像分别保存，头像失败时已保存文字保留。
-
-## 最新回归与界面修正
-昵称已删除，仅保留用户名。个人主页两按钮并排，导航通过Teleport固定在视口顶部。详见docs/changes/修复012-导航定位资料精简与全面回归.md。新增 `python scripts/check_boundaries.py` 可检查输入边界与同名注册并发。
-
-## 校园地点与讨论
-访问 `/campus` 或点击校园地图，支持地点留言、分页加载和删除本人留言，运行 `python scripts/check_campus.py` 验证。站内地图尚未接入，本批提供外部腾讯地图入口，不复用旧硬编码密钥。
-
-## 高清校园地图与问答
-校园页已使用提供的青岛校区规划图，130个热点支持悬停名称/计数、点击进入地点讨论、提问与回答。支持缩放、搜索地点及加载更早发言。规划图标号沿用图纸，不代表当前实际名称；热点清单见docs/campus-map-hotspots.json，矩形边界仍可精修。删除发言保留占位维护回复上下文。
-
-## 多层图文对话
-地点评论下预览最早两条回复，支持回复回复，完整页面查看全部对话（游标分批加载）。头像左侧、名称顶部、内容下方；图片及GIF在数据库保存，页面缩略不超过240×180，点击原图。运行 `python scripts/check_conversations.py` 验证。建筑命名按图中楼体小字增量校正，不改地点ID。
-
-## 校园交易
-商品详情可预订，个人主页进入 `/my/orders` 查看买卖记录。预订后锁定商品，双方可取消，买家交接后确认收货；并发预订只允许一个成功。旧商品未映射卖家暂不可交易。当前仅记录线下交接，不处理在线付款。运行 `python scripts/check_orders.py` 验证并发与权限，会创建已成交测试商品和专用账号。
+## Git与来源
+开发分支migration/java-vue；每批中文提交附docs/changes内同名Markdown说明。
+原美术资源来源：https://gitee.com/haha_49_0/sdu-database-experiment-three.git 。地图来源为用户提供的校园规划图；图纸名称不等于当前实地名称，原素材授权范围需核实。

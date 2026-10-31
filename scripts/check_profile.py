@@ -30,6 +30,8 @@ renamed={**value,'username':value['username']+'x'}
 request=urllib.request.Request('http://127.0.0.1:5173/api/profile',data=json.dumps(renamed).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':t},method='PUT')
 assert c.open(request).status==200
 assert json.loads(call(other,'/api/auth/me')[1])['username']==renamed['username']
-assert json.loads(call(c,'/api/my/products')[1])==before
+after=json.loads(call(c,'/api/my/products')[1])
+assert [{k:v for k,v in x.items() if k!='ownerName'} for x in after]==[{k:v for k,v in x.items() if k!='ownerName'} for x in before]
+assert all(x['ownerName']==renamed['username'] for x in after)
 assert call(c,'/api/my/products/'+str(before[0]['id'])+'/withdraw',{},t)[0]==204
 print('PASS: avatar blob, rename across sessions and stable product ownership')

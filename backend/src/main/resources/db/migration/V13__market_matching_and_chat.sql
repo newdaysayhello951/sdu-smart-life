@@ -1,0 +1,5 @@
+ALTER TABLE product ADD COLUMN listing_type VARCHAR(10) NOT NULL DEFAULT 'SELL';
+CREATE INDEX idx_market_type ON product(listing_type,status,id);
+CREATE TABLE private_chat(id BIGINT PRIMARY KEY AUTO_INCREMENT,user_low BIGINT NOT NULL,user_high BIGINT NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_chat_pair(user_low,user_high),FOREIGN KEY(user_low) REFERENCES app_user(id),FOREIGN KEY(user_high) REFERENCES app_user(id),CHECK(user_low<user_high));
+CREATE TABLE private_message(id BIGINT PRIMARY KEY AUTO_INCREMENT,chat_id BIGINT NOT NULL,sender_id BIGINT NOT NULL,content VARCHAR(2000) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(chat_id) REFERENCES private_chat(id),FOREIGN KEY(sender_id) REFERENCES app_user(id),INDEX idx_chat_message(chat_id,id));
+CREATE TABLE user_notification(id BIGINT PRIMARY KEY AUTO_INCREMENT,user_id BIGINT NOT NULL,kind VARCHAR(20) NOT NULL,title VARCHAR(200) NOT NULL,link VARCHAR(200) NOT NULL,chat_id BIGINT NULL,message_id BIGINT NULL,read_at TIMESTAMP NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES app_user(id),INDEX idx_user_unread(user_id,read_at,id));
