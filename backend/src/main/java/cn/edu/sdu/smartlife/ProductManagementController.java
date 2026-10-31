@@ -22,6 +22,13 @@ public class ProductManagementController {
   products.create(input.title(),input.description(),input.price(),input.location(),owner(principal));long id=products.lastId();images.upload(id,file,principal);return java.util.Map.of("id",id);
  }
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public void create(@Valid @RequestBody Input input,Principal principal){products.create(input.title(),input.description(),input.price(),input.location(),owner(principal));}
+ @PostMapping(value="/{id}/edit-with-image",consumes="multipart/form-data")
+ @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
+ @ResponseStatus(HttpStatus.NO_CONTENT)
+ public void editWithImage(@PathVariable long id,@Valid @RequestPart("product") Input input,@RequestPart("file") org.springframework.web.multipart.MultipartFile file,Principal principal) throws java.io.IOException {
+  if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+  images.upload(id,file,principal);
+ }
  @PutMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void edit(@PathVariable long id,@Valid @RequestBody Input input,Principal principal){if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
  @PostMapping("/{id}/withdraw") @ResponseStatus(HttpStatus.NO_CONTENT) public void withdraw(@PathVariable long id,Principal principal){if(products.withdraw(id,owner(principal))!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"鍟嗗搧涓嶅瓨鍦ㄦ垨涓嶅彲鎿嶄綔");}
 }
