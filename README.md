@@ -46,3 +46,6 @@ Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未�
 商品编辑使用 PUT /api/my/products/{id}；图片上传使用 POST /api/my/products/{id}/image。
 `python scripts/check_product_images.py` 检查编辑、上传、无效图片和越权拒绝；会保留已下架的回归商品与测试图片。
 当前替换图片后旧文件保留，后续需增加引用核对清理，避免误删仍被使用的文件。
+
+## 登录入口与首次发布
+未登录只显示登录注册表单，登录后可使用商品与图片接口；页面刷新查询服务端会话恢复状态，退出立即回到登录入口。右上角固定显示当前账号。首次发布从表单选择图片，使用 multipart `/api/my/products/publish` 一次提交，图片失败事务回滚。运行 `python scripts/check_login_publish.py` 验证最新行为。旧匿名商品回归断言不再适用。
