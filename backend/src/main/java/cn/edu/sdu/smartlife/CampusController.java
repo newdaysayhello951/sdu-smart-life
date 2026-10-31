@@ -26,7 +26,7 @@ interface CampusMapper {
  @Select("SELECT p.id,p.name,p.description,p.map_x AS mapX,p.map_y AS mapY,p.map_width AS mapWidth,p.map_height AS mapHeight,(SELECT COUNT(*) FROM place_comment c WHERE c.place_id=p.id) AS commentCount FROM campus_place p ORDER BY p.id") List<CampusController.Place> places();
  @Select("SELECT COUNT(*) FROM campus_place WHERE id=#{id}") int exists(long id);
  @Select("SELECT c.id,u.username,c.content,CAST(c.created_at AS CHAR) AS createdAt,c.parent_id AS parentId FROM place_comment c JOIN app_user u ON u.id=c.user_id WHERE c.place_id=#{id} AND (#{before}=0 OR c.id<#{before}) ORDER BY c.id DESC LIMIT 20") List<CampusController.Comment> comments(@Param("id") long id,@Param("before") long before);
- @Insert("INSERT INTO place_comment(place_id,user_id,content,parent_id) VALUES(#{id},#{user},#{content},#{parent})") void add(@Param("id") long id,@Param("user") long user,@Param("content") String content,@Param("parent") Long parent);
+ @Insert("INSERT INTO place_comment(place_id,user_id,content,parent_id,root_id) VALUES(#{id},#{user},#{content},#{parent},#{parent})") void add(@Param("id") long id,@Param("user") long user,@Param("content") String content,@Param("parent") Long parent);
  @Select("SELECT COUNT(*) FROM place_comment WHERE id=#{parent} AND place_id=#{id} AND parent_id IS NULL") int parentExists(@Param("id") long id,@Param("parent") long parent);
- @Update("UPDATE place_comment SET content='（作者已删除）' WHERE id=#{comment} AND place_id=#{id} AND user_id=#{user}") int delete(@Param("id") long id,@Param("comment") long comment,@Param("user") long user);
+ @Update("UPDATE place_comment SET content='（作者已删除）',media=NULL,media_type=NULL WHERE id=#{comment} AND place_id=#{id} AND user_id=#{user}") int delete(@Param("id") long id,@Param("comment") long comment,@Param("user") long user);
 }

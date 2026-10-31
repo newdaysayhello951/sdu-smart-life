@@ -4,6 +4,7 @@ import App from './App.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import Market from './Market.vue';
 import Campus from './Campus.vue';
+import ConversationPage from './ConversationPage.vue';
 import MyProducts from './MyProducts.vue';
-const router = createRouter({history:createWebHistory(),routes:[{path:'/campus',component:Campus},{path:'/my/products',component:MyProducts},{path:'/',component:{template:'<div />'}},{path:'/market',component:Market},{path:'/market/:id(\\d+)',component:Market}]});
+const router = createRouter({history:createWebHistory(),routes:[{path:'/campus/:placeId/conversations/:rootId',component:ConversationPage},{path:'/campus',component:Campus},{path:'/my/products',component:MyProducts},{path:'/',component:{template:'<div />'}},{path:'/market',component:Market},{path:'/market/:id(\\d+)',component:Market}]});
 createApp(App).use(createPinia()).use(router).mount('#app');

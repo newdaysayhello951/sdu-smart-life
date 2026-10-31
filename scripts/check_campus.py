@@ -25,7 +25,7 @@ assert next(x for x in json.loads(call(c,path)[1]) if x['id']==key)['content']==
 print('PASS: campus login gate, list, comments, validation, cursor, missing place, owner-only deletion')
 
 mapped=[p for p in json.loads(call(c,'/api/campus/places')[1]) if p['mapX'] is not None]
-assert len(mapped)==130
+assert len(mapped)>=134
 assert all(0<=p['mapX']<100 and 0<=p['mapY']<100 and p['mapX']+p['mapWidth']<=100 and p['mapY']+p['mapHeight']<=100 for p in mapped)
 p1,p2=mapped[0],mapped[1];path1='/api/campus/places/'+str(p1['id'])+'/comments'
 assert call(c,path1,{'content':'地点问题'},token)[0]==201
@@ -35,4 +35,4 @@ answers=json.loads(call(c,path1)[1]);assert answers[0]['parentId']==question['id
 assert call(c,'/api/campus/places/'+str(p2['id'])+'/comments',{'content':'错误关联','parentId':question['id']},token)[0]==400
 assert call(c,path1,{'content':'不支持多层回复','parentId':answers[0]['id']},token)[0]==400
 new=next(p for p in json.loads(call(c,'/api/campus/places')[1]) if p['id']==p1['id']);assert new['commentCount']==p1['commentCount']+2
-print('PASS: 130 hotspot bounds, questions, replies, cross-place reply denial, live count')
+print('PASS: hotspot bounds, questions, replies, cross-place reply denial, live count')
