@@ -8,7 +8,7 @@ import pymysql
 root=Path(__file__).resolve().parents[1]
 source=pymysql.connect(host=os.getenv('DB_HOST','127.0.0.1'),user=os.getenv('DB_USER','root'),password=os.environ['DB_PASSWORD'],database=os.getenv('LEGACY_DB','test'),charset='utf8mb4')
 target=pymysql.connect(host=os.getenv('DB_HOST','127.0.0.1'),user=os.getenv('DB_USER','root'),password=os.environ['DB_PASSWORD'],database='sdu_smart_life',charset='utf8mb4')
-folder=root/'frontend/public/uploads/legacy-products';folder.mkdir(parents=True,exist_ok=True)
+# Images are stored in MySQL, not frontend static files.
 report={'imported':0,'skipped':[],'locationConflicts':[]}
 try:
  with source.cursor() as q:
@@ -27,8 +27,13 @@ try:
    extension='png' if image and image.startswith(b'\x89PNG\r\n\x1a\n') else 'jpg' if image and image.startswith(b'\xff\xd8\xff') else None
    url='/assets/legacy/images/default.jpg'
    if extension:
-    name=f'{key}.{extension}';(folder/name).write_bytes(image);url=f'/uploads/legacy-products/{name}'
+    url='/assets/legacy/images/default.jpg'
    q.execute('INSERT INTO product(legacy_id,title,description,price,location,image_url) VALUES(%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE legacy_id=VALUES(legacy_id)',(key,title,description or '',price,addresses.get(address,''),url));report['imported']+=q.rowcount==1
+   if extension:
+    q.execute('SELECT id,image_url FROM product WHERE legacy_id=%s',(key,));product_id,current_url=q.fetchone()
+    if not current_url.startswith('/api/images/product/'):
+     q.execute('INSERT INTO product_image(product_id,content_type,data) VALUES(%s,%s,%s) ON DUPLICATE KEY UPDATE data=VALUES(data),content_type=VALUES(content_type)',(product_id,'image/png' if extension=='png' else 'image/jpeg',image))
+     q.execute('UPDATE product SET image_url=%s WHERE id=%s',('/api/images/product/'+str(product_id),product_id))
  target.commit()
 finally:source.close();target.close()
 print(json.dumps(report,ensure_ascii=True))

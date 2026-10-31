@@ -49,3 +49,9 @@ Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未�
 
 ## 登录入口与首次发布
 未登录只显示登录注册表单，登录后可使用商品与图片接口；页面刷新查询服务端会话恢复状态，退出立即回到登录入口。右上角固定显示当前账号。首次发布从表单选择图片，使用 multipart `/api/my/products/publish` 一次提交，图片失败事务回滚。运行 `python scripts/check_login_publish.py` 验证最新行为。旧匿名商品回归断言不再适用。
+
+## 当前存储方案（替代上述文件存储说明）
+所有用户业务字段及商品图片均存MySQL。product_image保存图片BLOB和MIME，通过登录保护的 /api/images/product/{id} 读取。替换图片更新同一行，不写磁盘。
+Flyway V4自动建表。旧文件版本运行 `python scripts/migrate_images_to_database.py` 导入；旧test库导入运行 `python scripts/import_legacy_products.py`，现在直接写数据库图片。
+本地旧文件暂保留备份，不参与运行，不进入Git。UPLOAD_DIR配置已移除，备份数据库需包含BLOB。
+个人主页新增昵称、签名和地点保存。运行 `python scripts/check_profile.py` 验证。
