@@ -10,7 +10,7 @@ onMounted(async()=>{try{currentUser.value=(await api.get('/api/auth/me')).data.u
 async function submitAuth(){ busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{currentUser.value=username.value;authOpen.value=false;}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
 async function accountAction(){if(!currentUser.value){authOpen.value=true;return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});currentUser.value='';}catch{notice.value='退出失败，请稍后重试';}}
 const notice = ref('');
-function openSection(name: string) { if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
+function openSection(name: string) { if(name==='个人主页'){router.push('/my/products');return;}  if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
 </script>
 
 <template>

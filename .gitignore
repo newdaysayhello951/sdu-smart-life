@@ -8,3 +8,5 @@
 .vscode/
 *.tsbuildinfo
 frontend/public/uploads/
+__pycache__/
+*.pyc

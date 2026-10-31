@@ -13,8 +13,8 @@
 
 ## 目录
 - backend：Java 服务，编译目标 Java 21。
-- frontend：Vue 前端；public/assets/legacy 保存原仓库静态资源。
-- reference：原始 Flask 代码和模板，仅用于业务迁移对照，不作为新系统运行依赖。
+- frontend：Vue 前端；public/assets/legacy 保留可复用美术资源，旧 CSS/JS 已清理。
+- 原始 Flask 参考代码已从当前版本删除，迁移对照可查看 Git 历史。
 - docs/changes：每次推送的修改说明，文件名与该次提交主题一致。
 
 ## Git 约定
@@ -36,3 +36,6 @@ Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未�
 旧地点编号冲突时留空，页面显示待补充。无有效价格的商品跳过并输出报告。
 图片导出至 `frontend/public/uploads/legacy-products`，不提交用户上传数据，部署前需执行导入，并将图片目录一同部署。
 执行 `python scripts/check_products.py` 验证商品接口、搜索、分页与图片，需要已导入商品及已启动的前后端。
+
+## 商品发布管理
+登录后点击个人主页进入 `/my/products`，支持发布及下架自己的商品。历史商品没有强行分配给新用户。图片上传尚未迁移，新商品使用默认图。旧 Flask 模板、Python 应用、CSS、JS 已删除；scripts 下 Python 文件为当前使用的迁移及回归工具，不参与应用运行。
