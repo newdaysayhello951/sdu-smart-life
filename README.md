@@ -38,4 +38,11 @@ Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未�
 执行 `python scripts/check_products.py` 验证商品接口、搜索、分页与图片，需要已导入商品及已启动的前后端。
 
 ## 商品发布管理
-登录后点击个人主页进入 `/my/products`，支持发布及下架自己的商品。历史商品没有强行分配给新用户。图片上传尚未迁移，新商品使用默认图。旧 Flask 模板、Python 应用、CSS、JS 已删除；scripts 下 Python 文件为当前使用的迁移及回归工具，不参与应用运行。
+登录后点击个人主页进入 `/my/products`，支持发布及下架自己的商品。历史商品没有强行分配给新用户。发布后可编辑商品及上传图片；未上传时使用默认图。旧 Flask 模板、Python 应用、CSS、JS 已删除；scripts 下 Python 文件为当前使用的迁移及回归工具，不参与应用运行。
+
+## 商品图片
+在我的发布中上传JPEG/PNG图片，单张不超过5MB、1600万像素。后端解码后重新编码PNG，使用随机文件名；只能修改自己的在售商品。
+通过 `UPLOAD_DIR` 指定持久化目录，默认工作目录下 uploads；部署时需挂载并备份。此目录不进入Git。
+商品编辑使用 PUT /api/my/products/{id}；图片上传使用 POST /api/my/products/{id}/image。
+`python scripts/check_product_images.py` 检查编辑、上传、无效图片和越权拒绝；会保留已下架的回归商品与测试图片。
+当前替换图片后旧文件保留，后续需增加引用核对清理，避免误删仍被使用的文件。

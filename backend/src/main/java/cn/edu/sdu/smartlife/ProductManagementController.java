@@ -16,5 +16,6 @@ public class ProductManagementController {
  private long owner(Principal principal){return users.find(principal.getName()).id();}
  @GetMapping public List<ProductMapper.Product> mine(Principal principal){return products.mine(owner(principal));}
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public void create(@Valid @RequestBody Input input,Principal principal){products.create(input.title(),input.description(),input.price(),input.location(),owner(principal));}
- @PostMapping("/{id}/withdraw") @ResponseStatus(HttpStatus.NO_CONTENT) public void withdraw(@PathVariable long id,Principal principal){if(products.withdraw(id,owner(principal))!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
+ @PutMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void edit(@PathVariable long id,@Valid @RequestBody Input input,Principal principal){if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
+ @PostMapping("/{id}/withdraw") @ResponseStatus(HttpStatus.NO_CONTENT) public void withdraw(@PathVariable long id,Principal principal){if(products.withdraw(id,owner(principal))!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"鍟嗗搧涓嶅瓨鍦ㄦ垨涓嶅彲鎿嶄綔");}
 }

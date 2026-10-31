@@ -11,7 +11,7 @@ public class SecurityConfig {
  @Bean BCryptPasswordEncoder passwordEncoder(){return new BCryptPasswordEncoder();}
  @Bean SecurityFilterChain security(HttpSecurity http) throws Exception {
   return http.csrf(c->c.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-   .authorizeHttpRequests(a->a.requestMatchers("/error","/api/auth/**","/api/platform","/actuator/health").permitAll().requestMatchers(HttpMethod.GET,"/api/products","/api/products/**").permitAll().anyRequest().authenticated())
+   .authorizeHttpRequests(a->a.requestMatchers("/error","/api/auth/**","/api/platform","/actuator/health").permitAll().requestMatchers(HttpMethod.GET,"/api/products","/api/products/**","/api/images/**").permitAll().anyRequest().authenticated())
    .exceptionHandling(e->e.authenticationEntryPoint((q,r,x)->r.setStatus(401)).accessDeniedHandler((q,r,x)->r.setStatus(403)))
    .logout(l->l.logoutUrl("/api/auth/logout").logoutSuccessHandler((q,r,a)->r.setStatus(204))).build();
  }

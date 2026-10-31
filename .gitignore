@@ -10,3 +10,5 @@
 frontend/public/uploads/
 __pycache__/
 *.pyc
+uploads/
+backend/uploads/
