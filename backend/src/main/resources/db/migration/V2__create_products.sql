@@ -1,0 +1,13 @@
+CREATE TABLE product (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT,
+ legacy_id INT UNIQUE,
+ title VARCHAR(120) NOT NULL,
+ description TEXT NOT NULL,
+ price DECIMAL(12,2) NOT NULL,
+ location VARCHAR(120) NOT NULL DEFAULT '',
+ image_url VARCHAR(255) NOT NULL,
+ status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ INDEX idx_product_status_id(status,id),
+ CONSTRAINT chk_product_price CHECK (price >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

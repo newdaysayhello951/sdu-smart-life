@@ -2,7 +2,7 @@
 校园二手交易与社区平台，正在从 Flask 迁移至 Vue 3 + Spring Boot。
 
 ## 当前状态
-已完成工程基础、校园首页和用户注册/登录/退出。商品、地图及交易功能仍待迁移。
+已完成工程基础、校园首页和用户注册/登录/退出。商品列表、搜索、分页及详情已接入；发布、地图及交易功能仍待迁移。
 
 ## 本地运行
 需要 JDK 21+、Maven 3.9+、Node.js 22。
@@ -28,3 +28,11 @@
 Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未导入，请注册新账号。
 用户名为 3–32 位字母、数字、下划线或短横线，密码 8–64 位。当前使用服务端 HttpSession，Redis 会话将在后续接入。
 运行 `python scripts/check_auth.py` 可验证认证、会话隔离和 CSRF（会创建一个唯一测试账号）。
+
+## 商品迁移与验证
+访问 `/market` 浏览商品，`/market/{id}` 查看详情，匿名用户可浏览。
+启动后端让 Flyway 创建 product 表，再安装 PyMySQL 并设置 `DB_PASSWORD`，执行 `python scripts/import_legacy_products.py`。
+脚本只读原 `test` 库；目标为独立 `sdu_smart_life` 库，按 legacy_id 去重。重复执行保留目标已有商品，不覆盖后续编辑。
+旧地点编号冲突时留空，页面显示待补充。无有效价格的商品跳过并输出报告。
+图片导出至 `frontend/public/uploads/legacy-products`，不提交用户上传数据，部署前需执行导入，并将图片目录一同部署。
+执行 `python scripts/check_products.py` 验证商品接口、搜索、分页与图片，需要已导入商品及已启动的前后端。

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
+const route=useRoute(), router=useRouter();
 const authOpen = ref(false), registering = ref(false), username = ref(''), password = ref(''), currentUser = ref(''), error = ref(''), busy = ref(false);
 const api = axios.create({withCredentials:true});
 async function csrf(){ const {data}=await api.get('/api/auth/csrf'); return {'X-XSRF-TOKEN':data.token}; }
@@ -8,22 +10,23 @@ onMounted(async()=>{try{currentUser.value=(await api.get('/api/auth/me')).data.u
 async function submitAuth(){ busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{currentUser.value=username.value;authOpen.value=false;}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
 async function accountAction(){if(!currentUser.value){authOpen.value=true;return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});currentUser.value='';}catch{notice.value='退出失败，请稍后重试';}}
 const notice = ref('');
-function openSection(name: string) { notice.value = `${name}正在迁移，完成后即可使用。`; }
+function openSection(name: string) { if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
 </script>
 
 <template>
  <main class="landing">
   <header class="navigation">
-   <a class="brand" href="/" aria-label="智慧校园首页"><span class="brand-mark">山大</span><span>智慧校园<small>SDU SMART LIFE</small></span></a>
-   <nav aria-label="主导航"><a href="/" class="active">首页</a><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
+   <RouterLink class="brand" to="/" aria-label="智慧校园首页"><span class="brand-mark">山大</span><span>智慧校园<small>SDU SMART LIFE</small></span></RouterLink>
+   <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
    <button class="account" @click="accountAction"><img src="/assets/legacy/picture/th1.jpg" alt="">{{ currentUser ? currentUser + ' · 退出' : '登录 / 注册' }}</button>
   </header>
-  <section class="welcome">
+  <section v-if="route.path==='/'" class="welcome">
    <p class="eyebrow"><span></span> SHANDONG UNIVERSITY · CAMPUS LIFE</p>
    <h1>在山大，<br>遇见生活的<span>更多可能。</span></h1>
    <p class="intro">让闲置好物继续陪伴，让熟悉的校园有新的发现。<br>你我的校园日常，在这里相连。</p>
    <div class="actions"><button class="primary" @click="openSection('二手市场')">逛逛二手市场 <span>↗</span></button><button class="secondary" @click="openSection('校园地图')">探索校园 <span>→</span></button></div>
   </section>
+  <RouterView v-if="route.path!=='/'" />
   <footer><div><span class="location-dot"></span>中国 · 山东大学<small>每一份热爱，都值得在这里相遇</small></div><span class="footer-note">SDU SMART LIFE <i> / </i> 让校园生活更有温度</span></footer>
   <div v-if="authOpen" class="auth-overlay" @click.self="authOpen=false"><section class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title"><button class="auth-close" aria-label="关闭" @click="authOpen=false">×</button><p class="auth-kicker">SDU SMART LIFE</p><h2 id="auth-title">{{ registering ? '加入校园生活' : '欢迎回来' }}</h2><form @submit.prevent="submitAuth"><label>用户名<input v-model="username" required pattern="[a-zA-Z0-9_-]{3,32}" autocomplete="username" placeholder="3–32 位字母、数字、下划线或短横线"></label><label>密码<input v-model="password" required type="password" minlength="8" maxlength="64" :autocomplete="registering?'new-password':'current-password'" placeholder="8–64 位密码"></label><p role="status" class="auth-error">{{ error }}</p><button class="auth-submit" :disabled="busy">{{ busy?'处理中…':registering?'注册':'登录' }}</button></form><button class="auth-switch" @click="registering=!registering;error=''">{{ registering?'已有账号？去登录':'没有账号？立即注册' }}</button></section></div>
   <div v-if="notice" class="notice" role="status">{{ notice }}<button aria-label="关闭提示" @click="notice = ''">×</button></div>
