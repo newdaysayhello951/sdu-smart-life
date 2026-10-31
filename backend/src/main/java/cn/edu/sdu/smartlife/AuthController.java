@@ -30,7 +30,7 @@ public class AuthController {
   if(user==null || !encoder.matches(input.password(),user.passwordHash())) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"用户名或密码错误");
   if(request.getSession(false)!=null) request.changeSessionId();
   var context=SecurityContextHolder.createEmptyContext();
-  context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(user.username(),null,java.util.List.of()));
+  var authentication=UsernamePasswordAuthenticationToken.authenticated(user.username(),null,java.util.List.of());authentication.setDetails(user.id());context.setAuthentication(authentication);
   SecurityContextHolder.setContext(context);
   new HttpSessionSecurityContextRepository().saveContext(context,request,response);
   return Map.of("username",user.username());

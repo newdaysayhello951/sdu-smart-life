@@ -55,3 +55,6 @@ Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未�
 Flyway V4自动建表。旧文件版本运行 `python scripts/migrate_images_to_database.py` 导入；旧test库导入运行 `python scripts/import_legacy_products.py`，现在直接写数据库图片。
 本地旧文件暂保留备份，不参与运行，不进入Git。UPLOAD_DIR配置已移除，备份数据库需包含BLOB。
 个人主页新增昵称、签名和地点保存。运行 `python scripts/check_profile.py` 验证。
+
+## 完整资料
+个人主页点击带山大与无脸男元素的按钮编辑用户名、昵称、QQ、个性签名、宿舍楼及头像。用户名即登录账号；关联以用户ID保持，改名不丢失商品归属，已登录会话同步名称。头像存MySQL，默认头像复用原素材。导航固定顶部。文字与头像分别保存，头像失败时已保存文字保留。
