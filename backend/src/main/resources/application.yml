@@ -1,8 +1,17 @@
 server:
   port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
 spring:
   application:
     name: sdu-smart-life
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/sdu_smart_life?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD}
 management:
   endpoints:
     web:

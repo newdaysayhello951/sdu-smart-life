@@ -2,7 +2,7 @@
 校园二手交易与社区平台，正在从 Flask 迁移至 Vue 3 + Spring Boot。
 
 ## 当前状态
-第一阶段：工程基础、原始资源归档、Vue 首页及 Java 接口。用户、商品和交易功能尚未接入。
+已完成工程基础、校园首页和用户注册/登录/退出。商品、地图及交易功能仍待迁移。
 
 ## 本地运行
 需要 JDK 21+、Maven 3.9+、Node.js 22。
@@ -22,3 +22,9 @@
 每批推送使用唯一提交主题，附上同名 Markdown 说明，记录范围、验证和待办。
 
 资源来源：https://gitee.com/haha_49_0/sdu-database-experiment-three.git 。保留来源说明；原仓库资源的授权范围仍需核实。
+
+## 用户认证配置
+先创建独立 MySQL 数据库 `sdu_smart_life`（utf8mb4），启动前设置环境变量 `DB_PASSWORD`；可通过 `DB_USER`、`DB_URL` 覆盖连接配置。密码不写入仓库。
+Flyway 启动时创建用户表；原 `test` 数据库不变。旧账号尚未导入，请注册新账号。
+用户名为 3–32 位字母、数字、下划线或短横线，密码 8–64 位。当前使用服务端 HttpSession，Redis 会话将在后续接入。
+运行 `python scripts/check_auth.py` 可验证认证、会话隔离和 CSRF（会创建一个唯一测试账号）。
