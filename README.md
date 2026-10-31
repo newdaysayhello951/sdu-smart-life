@@ -37,3 +37,6 @@ Flyway自动升级数据库。未登录展示登录注册入口；当前服务�
 ## Git与来源
 开发分支migration/java-vue；每批中文提交附docs/changes内同名Markdown说明。
 原美术资源来源：https://gitee.com/haha_49_0/sdu-database-experiment-three.git 。地图来源为用户提供的校园规划图；图纸名称不等于当前实地名称，原素材授权范围需核实。
+
+## 统一消息与定位
+消息中心整合私聊和校园回复；新校园通知带focus消息ID，跨分页自动加载后滚动到对应回复，位置稳定后短暂按压并灰化周围消息。旧私聊列表地址重定向到消息中心。`scripts/check_notification_focus.py` 验证跨50条分页的定位。
