@@ -15,8 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
- private final UserMapper users; private final BCryptPasswordEncoder encoder;
- public AuthController(UserMapper users,BCryptPasswordEncoder encoder){this.users=users;this.encoder=encoder;}
+ private final UserMapper users; private final BCryptPasswordEncoder encoder; private final RealtimeHub realtime;
+ public AuthController(UserMapper users,BCryptPasswordEncoder encoder,RealtimeHub realtime){this.users=users;this.encoder=encoder;this.realtime=realtime;}
  public record Credentials(@NotBlank @Pattern(regexp="[a-zA-Z0-9_\\-]{3,32}") String username,@NotBlank @Size(min=8,max=64) String password) {
  @jakarta.validation.constraints.AssertTrue(message="密码UTF-8长度不能超过72字节") public boolean isPasswordWithinLimit(){return password==null||password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length<=72;}
  }
@@ -30,6 +30,7 @@ public class AuthController {
  @PostMapping("/login") public Map<String,String> login(@Valid @RequestBody Credentials input,HttpServletRequest request,HttpServletResponse response){
   var user=users.find(input.username());
   if(user==null || !encoder.matches(input.password(),user.passwordHash())) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"用户名或密码错误");
+  realtime.disconnect(request.getSession(false));
   if(request.getSession(false)!=null) request.changeSessionId();
   var context=SecurityContextHolder.createEmptyContext();
   var authentication=UsernamePasswordAuthenticationToken.authenticated(user.username(),null,java.util.List.of());authentication.setDetails(user.id());context.setAuthentication(authentication);

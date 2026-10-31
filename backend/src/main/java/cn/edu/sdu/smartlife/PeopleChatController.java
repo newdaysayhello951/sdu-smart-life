@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class PeopleChatController {
- private final PeopleChatMapper db;private final UserMapper users;
- public PeopleChatController(PeopleChatMapper db,UserMapper users){this.db=db;this.users=users;}
+ private final PeopleChatMapper db;private final UserMapper users;private final RealtimeHub realtime;
+ public PeopleChatController(PeopleChatMapper db,UserMapper users,RealtimeHub realtime){this.db=db;this.users=users;this.realtime=realtime;}
  public record Person(long id,String username,String signature,String location,String qq,String dormitory){}
  public record Chat(long id,long peerId,String peerName,long unread){}
  public record Message(long id,long senderId,String username,String content,String createdAt){}
@@ -24,12 +24,12 @@ public class PeopleChatController {
  @GetMapping("/api/chats") public List<Chat> chats(Principal p){return db.chats(me(p));}
  private void require(long id,long user){if(db.member(id,user)==0)throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
  @GetMapping("/api/chats/{id}/messages") public List<Message> messages(@PathVariable long id,Principal p,@RequestParam(defaultValue="0") long after){if(after<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);require(id,me(p));return db.messages(id,after);}
- @PostMapping("/api/chats/{id}/messages") @ResponseStatus(HttpStatus.CREATED) @org.springframework.transaction.annotation.Transactional public void send(@PathVariable long id,@Valid @RequestBody Input input,Principal p){long self=me(p);require(id,self);db.send(id,self,input.content().trim());long message=db.last();long peer=db.peer(id,self);db.notify(peer,self,"收到新私信","/messages/"+id+"?focus="+message,id,message);}
- @PostMapping("/api/chats/{id}/read") public void readChat(@PathVariable long id,@RequestParam long through,Principal p){if(through<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);long self=me(p);require(id,self);db.readChat(id,self,through);}
+ @PostMapping("/api/chats/{id}/messages") @ResponseStatus(HttpStatus.CREATED) @org.springframework.transaction.annotation.Transactional public void send(@PathVariable long id,@Valid @RequestBody Input input,Principal p){long self=me(p);require(id,self);db.send(id,self,input.content().trim());long message=db.last();long peer=db.peer(id,self);db.notify(peer,self,"收到新私信","/messages/"+id+"?focus="+message,id,message);realtime.changed(peer,"chat",id);realtime.changed(self,"chat",id);}
+ @PostMapping("/api/chats/{id}/read") public void readChat(@PathVariable long id,@RequestParam long through,Principal p){if(through<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);long self=me(p);require(id,self);db.readChat(id,self,through);realtime.changed(self,"read",id);}
  @GetMapping("/api/notifications") public List<Notification> notifications(Principal p,@RequestParam(defaultValue="0") long before){if(before<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);return db.notifications(me(p),before);}
  @GetMapping("/api/notifications/unread") public Map<String,Long> unread(Principal p){return Map.of("count",db.unread(me(p)));}
- @PostMapping("/api/notifications/read-all") public void readAll(Principal p,@RequestParam long through){if(through<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);db.readAll(me(p),through);}
- @PostMapping("/api/notifications/{id}/read") public void readOne(@PathVariable long id,Principal p){long self=me(p);if(db.ownsNotification(id,self)==0)throw new ResponseStatusException(HttpStatus.NOT_FOUND);db.readOne(id,self);}
+ @PostMapping("/api/notifications/read-all") public void readAll(Principal p,@RequestParam long through){if(through<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);long self=me(p);db.readAll(self,through);realtime.changed(self,"read",null);}
+ @PostMapping("/api/notifications/{id}/read") public void readOne(@PathVariable long id,Principal p){long self=me(p);if(db.ownsNotification(id,self)==0)throw new ResponseStatusException(HttpStatus.NOT_FOUND);db.readOne(id,self);realtime.changed(self,"read",null);}
 }
 @Mapper
 interface PeopleChatMapper {

@@ -13,8 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/conversations")
 public class ConversationController {
- private final ConversationMapper db;private final UserMapper users;
- public ConversationController(ConversationMapper db,UserMapper users){this.db=db;this.users=users;}
+ private final ConversationMapper db;private final UserMapper users;private final RealtimeHub realtime;
+ public ConversationController(ConversationMapper db,UserMapper users,RealtimeHub realtime){this.db=db;this.users=users;this.realtime=realtime;}
  public record Message(long id,long userId,String username,String content,String createdAt,Long parentId,Long rootId,String mediaUrl,String replyToUsername,long replyCount){}
  public record Thread(Message message,List<Message> replies){}
  public record Input(@Positive long placeId,@NotNull @Size(max=1000) String content,Long parentId){}
@@ -34,7 +34,7 @@ public class ConversationController {
   try(var in=ImageIO.createImageInputStream(file.getInputStream())){var readers=ImageIO.getImageReaders(in);if(!readers.hasNext())throw new ResponseStatusException(HttpStatus.BAD_REQUEST);var reader=readers.next();try{reader.setInput(in);String format=reader.getFormatName().toLowerCase();if(!List.of("png","jpeg","gif").contains(format)||(long)reader.getWidth(0)*reader.getHeight(0)>16000000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);if(format.equals("gif")){if(reader.getNumImages(true)>200)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);bytes=file.getBytes();mime="image/gif";}else{var image=reader.read(0);var out=new ByteArrayOutputStream();ImageIO.write(image,"png",out);bytes=out.toByteArray();mime="image/png";if(bytes.length>16*1024*1024)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);}}finally{reader.dispose();}}
   catch(javax.imageio.IIOException e){throw new ResponseStatusException(HttpStatus.BAD_REQUEST);}
  }
- db.add(input.placeId(),users.find(principal.getName()).id(),input.content().trim(),input.parentId(),root,bytes,mime);long id=db.last();if(input.parentId()!=null){var parent=db.find(input.parentId());long self=users.find(principal.getName()).id();if(parent.userId()!=self)db.notifyReply(parent.userId(),"你的校园发言收到回复","/campus/"+input.placeId()+"/conversations/"+root+"?focus="+id); }return Map.of("id",id,"rootId",root==null?id:root);
+ db.add(input.placeId(),users.find(principal.getName()).id(),input.content().trim(),input.parentId(),root,bytes,mime);long id=db.last();if(input.parentId()!=null){var parent=db.find(input.parentId());long self=users.find(principal.getName()).id();if(parent.userId()!=self){db.notifyReply(parent.userId(),"你的校园发言收到回复","/campus/"+input.placeId()+"/conversations/"+root+"?focus="+id);realtime.changed(parent.userId(),"reply",null);} }return Map.of("id",id,"rootId",root==null?id:root);
  }
  @GetMapping("/{id}/image") public ResponseEntity<byte[]> image(@PathVariable long id){var data=db.media(id);if(data==null||data.data()==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.parseMediaType(data.mime())).header("X-Content-Type-Options","nosniff").body(data.data());}
  @GetMapping("/avatars/{id}") public ResponseEntity<byte[]> avatar(@PathVariable long id) throws IOException{var stored=db.avatar(id);byte[] data=stored==null?null:stored.data();if(data==null){try(var in=getClass().getResourceAsStream("/default-avatar.jpg")){return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(in.readAllBytes());}}return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).cacheControl(CacheControl.noStore()).body(data);}

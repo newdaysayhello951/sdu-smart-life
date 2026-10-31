@@ -1,5 +1,4 @@
 import { createApp } from 'vue';
-import { createPinia } from 'pinia';
 import App from './App.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import Market from './Market.vue';
@@ -10,4 +9,4 @@ import PublicProfile from './PublicProfile.vue';
 import Messages from './Messages.vue';
 import Notifications from './Notifications.vue';
 const router = createRouter({history:createWebHistory(),routes:[{path:'/people/:id',component:PublicProfile},{path:'/messages',redirect:'/notifications'},{path:'/messages/:id',component:Messages},{path:'/notifications',component:Notifications},{path:'/campus/:placeId/conversations/:rootId',component:ConversationPage},{path:'/campus',component:Campus},{path:'/my/products',component:MyProducts},{path:'/',component:{template:'<div />'}},{path:'/market',component:Market},{path:'/market/:id(\\d+)',component:Market}]});
-createApp(App).use(createPinia()).use(router).mount('#app');
+createApp(App).use(router).mount('#app');
