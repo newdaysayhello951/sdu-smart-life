@@ -61,3 +61,6 @@ Flyway V4自动建表。旧文件版本运行 `python scripts/migrate_images_to_
 
 ## 最新回归与界面修正
 昵称已删除，仅保留用户名。个人主页两按钮并排，导航通过Teleport固定在视口顶部。详见docs/changes/修复012-导航定位资料精简与全面回归.md。新增 `python scripts/check_boundaries.py` 可检查输入边界与同名注册并发。
+
+## 校园地点与讨论
+访问 `/campus` 或点击校园地图，支持地点留言、分页加载和删除本人留言，运行 `python scripts/check_campus.py` 验证。站内地图尚未接入，本批提供外部腾讯地图入口，不复用旧硬编码密钥。
