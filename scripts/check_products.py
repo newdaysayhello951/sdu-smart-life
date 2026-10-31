@@ -1,6 +1,12 @@
 """Read-only API checks; expects at least one imported product."""
 import json, urllib.request, urllib.error, urllib.parse
-opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+from check_auth import client,call
+import uuid
+opener=client()
+token=json.loads(call(opener,'/api/auth/csrf')[1])['token']
+account={'username':'browse_'+uuid.uuid4().hex[:10],'password':uuid.uuid4().hex}
+assert call(opener,'/api/auth/register',account,token)[0]==201
+assert call(opener,'/api/auth/login',account,token)[0]==200
 def get(path):
  try:
   with opener.open('http://127.0.0.1:5173'+path) as r:return r.status,r.read()

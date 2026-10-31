@@ -17,7 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthController {
  private final UserMapper users; private final BCryptPasswordEncoder encoder;
  public AuthController(UserMapper users,BCryptPasswordEncoder encoder){this.users=users;this.encoder=encoder;}
- public record Credentials(@NotBlank @Pattern(regexp="[a-zA-Z0-9_\\-]{3,32}") String username,@NotBlank @Size(min=8,max=64) String password) {}
+ public record Credentials(@NotBlank @Pattern(regexp="[a-zA-Z0-9_\\-]{3,32}") String username,@NotBlank @Size(min=8,max=64) String password) {
+ @jakarta.validation.constraints.AssertTrue(message="密码UTF-8长度不能超过72字节") public boolean isPasswordWithinLimit(){return password==null||password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length<=72;}
+ }
  @GetMapping("/csrf") public Map<String,String> csrf(CsrfToken token){return Map.of("token",token.getToken());}
  @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED)
  public Map<String,String> register(@Valid @RequestBody Credentials input){

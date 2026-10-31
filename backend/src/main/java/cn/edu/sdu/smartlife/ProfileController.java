@@ -20,8 +20,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 public class ProfileController {
  private final ProfileMapper profiles;
  public ProfileController(ProfileMapper profiles){this.profiles=profiles;}
- public record Profile(String username,String displayName,String signature,String location,String qq,String dormitory){}
- public record Input(@NotBlank @Pattern(regexp="[a-zA-Z0-9_-]{3,32}") String username,@NotNull @Size(max=50) String displayName,@NotNull @Size(max=300) String signature,@NotNull @Size(max=120) String location,@NotNull @Pattern(regexp="[0-9]{0,20}") String qq,@NotNull @Size(max=120) String dormitory){}
+ public record Profile(String username,String signature,String location,String qq,String dormitory){}
+ public record Input(@NotBlank @Pattern(regexp="[a-zA-Z0-9_-]{3,32}") String username,@NotNull @Size(max=300) String signature,@NotNull @Size(max=120) String location,@NotNull @Pattern(regexp="[0-9]{0,20}") String qq,@NotNull @Size(max=120) String dormitory){}
  @GetMapping public Profile get(Principal p){return profiles.find(p.getName());}
  @PutMapping public Profile save(@Valid @RequestBody Input input,Principal p,HttpServletRequest request,HttpServletResponse response){
   try{profiles.save(p.getName(),input);}catch(DuplicateKeyException e){throw new ResponseStatusException(HttpStatus.CONFLICT,"用户名已存在");}
@@ -39,8 +39,8 @@ public class ProfileController {
 }
 @Mapper
 interface ProfileMapper {
- @Select("SELECT username,display_name AS displayName,signature,location,qq,dormitory FROM app_user WHERE username=#{name}") ProfileController.Profile find(String name);
- @Update("UPDATE app_user SET username=#{input.username},display_name=#{input.displayName},signature=#{input.signature},location=#{input.location},qq=#{input.qq},dormitory=#{input.dormitory} WHERE username=#{name}") void save(@Param("name") String name,@Param("input") ProfileController.Input input);
+ @Select("SELECT username,signature,location,qq,dormitory FROM app_user WHERE username=#{name}") ProfileController.Profile find(String name);
+ @Update("UPDATE app_user SET username=#{input.username},signature=#{input.signature},location=#{input.location},qq=#{input.qq},dormitory=#{input.dormitory} WHERE username=#{name}") void save(@Param("name") String name,@Param("input") ProfileController.Input input);
  @Update("UPDATE app_user SET avatar=#{data} WHERE username=#{name}") void avatar(@Param("name") String name,@Param("data") byte[] data);
  record Avatar(byte[] data){}
  @Select("SELECT avatar AS data FROM app_user WHERE username=#{name}") Avatar avatarData(String name);
