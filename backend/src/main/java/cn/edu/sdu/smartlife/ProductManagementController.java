@@ -12,7 +12,10 @@ import org.springframework.web.server.ResponseStatusException;
 public class ProductManagementController {
  private final ProductMapper products;private final UserMapper users;private final ProductImageController images;
  public ProductManagementController(ProductMapper products,UserMapper users,ProductImageController images){this.products=products;this.users=users;this.images=images;}
- public record Input(@NotBlank @Size(max=120) String title,@NotBlank @Size(max=5000) String description,@NotNull @DecimalMin("0.01") @DecimalMax("99999999.99") @Digits(integer=8,fraction=2) BigDecimal price,@NotBlank @Size(max=120) String location,@Pattern(regexp="SELL|WANTED") String kind){}
+ public record Input(@NotBlank @Size(max=120) String title,@NotBlank @Size(max=5000) String description,@NotNull @DecimalMin("0.00") @DecimalMax("99999999.99") @Digits(integer=8,fraction=2) BigDecimal price,@NotBlank @Size(max=120) String location,@Pattern(regexp="SELL|WANTED|LOST|FOUND") String kind){
+ @AssertTrue(message="出售和求购金额必须大于零，失物信息金额必须为零")
+ public boolean isPriceValid(){return price==null || (("LOST".equals(kind)||"FOUND".equals(kind))?price.signum()==0:price.signum()>0);}
+ }
  private long owner(Principal principal){return CurrentUser.id(principal);}
  @GetMapping public List<ProductMapper.Product> mine(Principal principal){return products.mine(owner(principal));}
  @PostMapping(value="/publish",consumes="multipart/form-data")

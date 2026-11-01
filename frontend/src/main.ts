@@ -8,5 +8,5 @@ import MyProducts from './MyProducts.vue';
 import PublicProfile from './PublicProfile.vue';
 import Messages from './Messages.vue';
 import Notifications from './Notifications.vue';
-const router = createRouter({history:createWebHistory(),routes:[{path:'/people/:id',component:PublicProfile},{path:'/messages',redirect:'/notifications'},{path:'/messages/:id',component:Messages},{path:'/notifications',component:Notifications},{path:'/campus/:placeId/conversations/:rootId',component:ConversationPage},{path:'/campus',component:Campus},{path:'/my/products',component:MyProducts},{path:'/',component:{template:'<div />'}},{path:'/market',component:Market},{path:'/market/:id(\\d+)',component:Market}]});
+const router = createRouter({history:createWebHistory(),routes:[{path:'/people/:id',component:PublicProfile},{path:'/messages',redirect:'/notifications'},{path:'/messages/:id',component:Messages},{path:'/notifications',component:Notifications},{path:'/campus/:placeId/conversations/:rootId',component:ConversationPage},{path:'/campus',component:Campus},{path:'/my/products',component:MyProducts},{path:'/',component:{template:'<div />'}},{path:'/lost-found',component:Market},{path:'/lost-found/:id(\\d+)',component:Market},{path:'/market',component:Market},{path:'/market/:id(\\d+)',component:Market}]});
 createApp(App).use(router).mount('#app');

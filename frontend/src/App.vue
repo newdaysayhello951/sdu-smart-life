@@ -25,7 +25,7 @@ const authInterceptor=axios.interceptors.response.use(r=>r,e=>{if(e.response?.st
 async function submitAuth(){if(busy.value)return; busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{await restoreSession();authChannel?.postMessage('login');}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
 async function accountAction(){if(!currentUser.value){return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});sessionRequest++;currentUser.value='';authChannel?.postMessage('logout');router.replace('/');}catch{notice.value='退出失败，请稍后重试';}}
 const notice = ref('');
-function openSection(name: string) { if(name==='校园地图'){router.push('/campus');return;}  if(name==='个人主页'){router.push('/my/products');return;}  if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
+function openSection(name: string) { if(name==='失物回家'){router.push('/lost-found');return;} if(name==='校园地图'){router.push('/campus');return;}  if(name==='个人主页'){router.push('/my/products');return;}  if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
 </script>
 
 <template>
@@ -33,7 +33,7 @@ function openSection(name: string) { if(name==='校园地图'){router.push('/cam
   <p v-if="checking" class="session-check" role="status">正在确认登录状态…</p>
   <Teleport to="body"><header v-if="!checking && currentUser" class="navigation">
    <RouterLink class="brand" to="/" aria-label="智慧校园首页"><span class="brand-mark">山大</span><span>智慧校园<small>SDU SMART LIFE</small></span></RouterLink>
-   <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
+   <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('失物回家')">失物回家</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
    <div class="account"><RouterLink class="notification-bubble" to="/notifications" :aria-label="'消息中心，未读'+unreadCount+'条'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="16" cy="10" r="1" fill="currentColor"/></svg><b v-if="unreadCount>0">{{Math.min(99,unreadCount)}}</b></RouterLink><img :src="'/api/profile/avatar?v='+avatarVersion" alt=""><span>{{ currentUser }} · 已登录</span><button class="logout-button" @click="accountAction">退出登录</button></div>
   </header></Teleport>
   <div v-if="currentUser" class="page-content">
@@ -63,3 +63,5 @@ html,body,#app{height:100%;overflow:hidden}.landing{height:100dvh;min-height:0;o
 @media(max-width:550px){.account{max-width:100%;min-width:0}.account>span{min-width:0;overflow:hidden;text-overflow:ellipsis}.account img,.account .notification-bubble,.account .logout-button{flex-shrink:0}}
 </style>
 
+
+<style>@media(min-width:851px) and (max-width:1200px){nav{gap:18px}.navigation{padding:0 3%;gap:15px}.brand{font-size:18px}}@media(max-width:550px){nav{gap:17px}nav a,nav button{font-size:11px}}</style>
