@@ -16,7 +16,7 @@ public class ProductImageController {
  public ProductImageController(ProductMapper products,UserMapper users,ProductImageMapper images){this.products=products;this.users=users;this.images=images;}
  @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
  @PostMapping("/api/my/products/{id}/image") public Map<String,String> upload(@PathVariable long id,@RequestParam("file") MultipartFile file,Principal principal) throws IOException {
-  long owner=users.find(principal.getName()).id();
+  long owner=CurrentUser.id(principal);
   if(products.owned(id,owner)!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
   if(file.isEmpty()||file.getSize()>5*1024*1024)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"图片应小于5MB");
   java.awt.image.BufferedImage image;

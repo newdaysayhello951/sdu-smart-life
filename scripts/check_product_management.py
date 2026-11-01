@@ -1,5 +1,5 @@
 """Integration check; creates an account and one withdrawn test product."""
-from check_auth import client, call
+from check_auth import BASE,client, call
 import json, uuid
 a,b=client(),client()
 assert call(a,'/api/my/products')[0]==401

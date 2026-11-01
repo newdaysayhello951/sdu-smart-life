@@ -1,15 +1,17 @@
-"""Read-only API checks; expects at least one imported product."""
+"""Self-contained product regression; never depends on legacy/sample data."""
 import json, urllib.request, urllib.error, urllib.parse
-from check_auth import client,call
+from check_auth import BASE,client,call
 import uuid
 opener=client()
 token=json.loads(call(opener,'/api/auth/csrf')[1])['token']
 account={'username':'browse_'+uuid.uuid4().hex[:10],'password':uuid.uuid4().hex}
 assert call(opener,'/api/auth/register',account,token)[0]==201
 assert call(opener,'/api/auth/login',account,token)[0]==200
+assert call(opener,'/api/my/products',{'title':'browse_'+uuid.uuid4().hex[:10],'description':'市场回归','price':'1','location':'校园','kind':'SELL'},token)[0]==201
+
 def get(path):
  try:
-  with opener.open('http://127.0.0.1:5173'+path) as r:return r.status,r.read()
+  with opener.open(BASE+path) as r:return r.status,r.read()
  except urllib.error.HTTPError as e:return e.code,e.read()
 status,body=get('/api/products?size=2');assert status==200
 page=json.loads(body);assert page['total']>0 and len(page['items'])<=2

@@ -16,6 +16,6 @@ public class RealtimeController {
  @GetMapping(value="/api/events",produces=MediaType.TEXT_EVENT_STREAM_VALUE)
  public ResponseEntity<SseEmitter> events(Principal principal,HttpServletRequest request){
   return ResponseEntity.ok().header("Cache-Control","no-store").header("X-Accel-Buffering","no")
-   .body(hub.subscribe(users.find(principal.getName()).id(),request.getSession(false)));
+   .body(hub.subscribe(CurrentUser.id(principal),request.getSession(false)));
  }
 }

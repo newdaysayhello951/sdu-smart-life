@@ -1,4 +1,4 @@
-from check_auth import client,call
+from check_auth import BASE,client,call
 import uuid,json,urllib.request,urllib.error
 c=client();token=json.loads(call(c,'/api/auth/csrf')[1])['token'];u={'username':'campus_'+uuid.uuid4().hex[:10],'password':uuid.uuid4().hex}
 assert call(c,'/api/campus/places')[0]==401
@@ -16,7 +16,7 @@ other=client();ot=json.loads(call(other,'/api/auth/csrf')[1])['token'];v={'usern
 assert call(other,'/api/auth/register',v,ot)[0]==201
 assert call(other,'/api/auth/login',v,ot)[0]==200
 def delete(a,t):
- r=urllib.request.Request('http://127.0.0.1:5173'+path+'/'+str(key),method='DELETE',headers={'X-XSRF-TOKEN':t})
+ r=urllib.request.Request(BASE+path+'/'+str(key),method='DELETE',headers={'X-XSRF-TOKEN':t})
  try:return a.open(r).status
  except urllib.error.HTTPError as e:return e.code
 assert delete(other,ot)==404

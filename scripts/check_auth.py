@@ -1,6 +1,8 @@
 """Run against a local server; creates one uniquely named verification account."""
-import urllib.request, urllib.error, http.cookiejar, json, uuid
-BASE = 'http://127.0.0.1:5173'
+import urllib.request, urllib.error, http.cookiejar, json, uuid, os
+BASE = os.environ.get('TEST_BASE_URL','').rstrip('/')
+if BASE != 'http://127.0.0.1:15173':
+ raise SystemExit('Use the isolated QA runner; TEST_BASE_URL must be http://127.0.0.1:15173')
 def client():
  return urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 def call(c, path, data=None, token=None):
@@ -8,7 +10,7 @@ def call(c, path, data=None, token=None):
  if token: headers['X-XSRF-TOKEN']=token
  r=urllib.request.Request(BASE+path, data=json.dumps(data).encode() if data is not None else None, headers=headers)
  try:
-  with c.open(r) as response: return response.status, response.read()
+  with c.open(r,timeout=30) as response: return response.status, response.read()
  except urllib.error.HTTPError as e: return e.code,e.read()
 a,b=client(),client()
 assert call(a,'/api/auth/me')[0]==401

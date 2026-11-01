@@ -5,6 +5,6 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
  private final ProductService service;
  public ProductController(ProductService service){this.service=service;}
- @GetMapping public ProductService.Page list(@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="12") int size,@RequestParam(defaultValue="SELL") String kind){return service.list(keyword,page,size,kind);}
+ @GetMapping public ProductService.Page list(@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="12") int size,@RequestParam(defaultValue="SELL") String kind,@RequestParam(defaultValue="0") long snapshot){return service.list(keyword,page,size,kind,snapshot);}
  @GetMapping("/{id}") public ProductMapper.Product detail(@PathVariable long id){return service.detail(id);}
 }

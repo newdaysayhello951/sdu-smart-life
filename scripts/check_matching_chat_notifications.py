@@ -1,4 +1,4 @@
-from check_auth import client,call
+from check_auth import BASE,client,call
 import uuid,json,urllib.request,urllib.error
 from concurrent.futures import ThreadPoolExecutor
 def account():
@@ -54,7 +54,7 @@ assert call(a,'/api/orders')[0]==404
 # Renaming updates public listings, peers, message authors and historical notification labels.
 renamed=ap['username']+'_new'
 profile={'username':renamed,'signature':'test','location':'','qq':'','dormitory':''}
-request=urllib.request.Request('http://127.0.0.1:5173/api/profile',data=json.dumps(profile).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':at},method='PUT')
+request=urllib.request.Request(BASE+'/api/profile',data=json.dumps(profile).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':at},method='PUT')
 assert a.open(request).status==200
 assert json.loads(call(b,'/api/people/'+str(ap['id']))[1])['username']==renamed
 assert next(c for c in json.loads(call(b,'/api/chats')[1]) if c['id']==chat)['peerName']==renamed

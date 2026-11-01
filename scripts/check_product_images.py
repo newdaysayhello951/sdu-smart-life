@@ -1,5 +1,5 @@
 """Creates test accounts and a withdrawn product to verify edit/upload authorization."""
-from check_auth import client,call
+from check_auth import BASE,client,call
 import json,uuid,urllib.request,urllib.error
 from pathlib import Path
 a,b=client(),client()
@@ -10,7 +10,7 @@ item={'title':'图片回归','description':'测试','price':'20.00','location':'
 assert call(a,'/api/my/products',item,at)[0]==201
 key=json.loads(call(a,'/api/my/products')[1])[0]['id']
 def edit(c,token):
- req=urllib.request.Request('http://127.0.0.1:5173/api/my/products/'+str(key),data=json.dumps({**item,'title':'修改后的商品'}).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':token},method='PUT')
+ req=urllib.request.Request(BASE+'/api/my/products/'+str(key),data=json.dumps({**item,'title':'修改后的商品'}).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':token},method='PUT')
  try:return c.open(req).status
  except urllib.error.HTTPError as e:return e.code
 assert edit(b,bt)==404
@@ -19,7 +19,7 @@ assert json.loads(call(a,'/api/products/'+str(key))[1])['title']=='修改后的�
 def upload(c,token,body):
  boundary=uuid.uuid4().hex
  data=(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n').encode()+body+f'\r\n--{boundary}--\r\n'.encode()
- req=urllib.request.Request('http://127.0.0.1:5173/api/my/products/'+str(key)+'/image',data=data,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})
+ req=urllib.request.Request(BASE+'/api/my/products/'+str(key)+'/image',data=data,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})
  try:
   with c.open(req) as r:return r.status,r.read()
  except urllib.error.HTTPError as e:return e.code,e.read()

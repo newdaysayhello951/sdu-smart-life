@@ -1,4 +1,4 @@
-from check_auth import client,call
+from check_auth import BASE,client,call
 import json,uuid,urllib.request,urllib.error,base64
 from pathlib import Path
 c=client();token=json.loads(call(c,'/api/auth/csrf')[1])['token'];u={'username':'thread_'+uuid.uuid4().hex[:10],'password':uuid.uuid4().hex}
@@ -11,7 +11,7 @@ def post(text,parent=None,file=None,place_id=place):
  body=(f'--{boundary}\r\nContent-Disposition: form-data; name="message"\r\nContent-Type: application/json\r\n\r\n'+json.dumps({'placeId':place_id,'content':text,'parentId':parent})+'\r\n').encode()
  if file is not None:body+=(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="image.gif"\r\nContent-Type: image/gif\r\n\r\n').encode()+file+b'\r\n'
  body+=f'--{boundary}--\r\n'.encode()
- req=urllib.request.Request('http://127.0.0.1:5173/api/conversations',data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})
+ req=urllib.request.Request(BASE+'/api/conversations',data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})
  try:
   with c.open(req) as r:return r.status,json.loads(r.read())
  except urllib.error.HTTPError as e:return e.code,None

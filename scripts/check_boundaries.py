@@ -1,5 +1,5 @@
 """Boundary and concurrency checks against local test environment."""
-from check_auth import client,call
+from check_auth import BASE,client,call
 from concurrent.futures import ThreadPoolExecutor
 import json,uuid,urllib.request,urllib.error
 c=client();token=json.loads(call(c,'/api/auth/csrf')[1])['token'];name='strict_'+uuid.uuid4().hex[:10]
@@ -23,7 +23,7 @@ def register(_):
 with ThreadPoolExecutor(max_workers=2) as pool:assert sorted(pool.map(register,range(2)))==[201,409]
 # Duplicate rename must not damage either account.
 p={'username':race,'signature':'','location':'','qq':'','dormitory':''}
-req=urllib.request.Request('http://127.0.0.1:5173/api/profile',data=json.dumps(p).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':token},method='PUT')
+req=urllib.request.Request(BASE+'/api/profile',data=json.dumps(p).encode(),headers={'Content-Type':'application/json','X-XSRF-TOKEN':token},method='PUT')
 try:c.open(req);raise AssertionError('duplicate rename accepted')
 except urllib.error.HTTPError as e:assert e.code==409
 assert json.loads(call(c,'/api/auth/me')[1])['username']==name

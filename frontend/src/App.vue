@@ -8,18 +8,22 @@ const checking=ref(true);
 const registering = ref(false), username = ref(''), password = ref(''), currentUser = ref(''), error = ref(''), busy = ref(false);
 const api = axios.create({withCredentials:true});
 async function csrf(){ const {data}=await api.get('/api/auth/csrf'); return {'X-XSRF-TOKEN':data.token}; }
-async function restoreSession(){checking.value=true;try{currentUser.value=(await api.get('/api/auth/me')).data.username;}catch{currentUser.value='';}finally{checking.value=false;refreshUnread();}}
+let sessionRequest=0;
+const authChannel=typeof BroadcastChannel==='undefined'?null:new BroadcastChannel('sdu-smart-life-auth');
+async function restoreSession(){const request=++sessionRequest;checking.value=true;try{const {data}=await api.get('/api/auth/me');if(request===sessionRequest)currentUser.value=data.username;}catch{if(request===sessionRequest)currentUser.value='';}finally{if(request===sessionRequest){checking.value=false;refreshUnread();}}}
 function profileUpdated(){restoreSession();avatarVersion.value++;}
-onMounted(()=>{restoreSession();window.addEventListener('profile-updated',profileUpdated);});
+function sessionReplaced(){currentUser.value='';router.replace('/');restoreSession();}
+function authBroadcast(event:MessageEvent){if(event.data==='logout'){sessionRequest++;currentUser.value='';checking.value=false;router.replace('/');}else if(event.data==='login')sessionReplaced();}
+onMounted(()=>{restoreSession();window.addEventListener('profile-updated',profileUpdated);window.addEventListener('session-replaced',sessionReplaced);if(authChannel)authChannel.onmessage=authBroadcast;});
 const avatarVersion=ref(0),unreadCount=ref(0);
 let unreadJob:Promise<void>|undefined,unreadAgain=false;
 function refreshUnread(){unreadAgain=true;if(unreadJob)return unreadJob;unreadJob=(async()=>{while(unreadAgain){unreadAgain=false;const user=currentUser.value;if(!user){unreadCount.value=0;continue;}try{const {data}=await api.get('/api/notifications/unread');if(currentUser.value===user)unreadCount.value=data.count;}catch{}}})().finally(()=>unreadJob=undefined);return unreadJob;}
 watch(currentUser,user=>{if(user)startRealtime();else{stopRealtime();unreadCount.value=0;}});
 onMounted(()=>{window.addEventListener('notifications-updated',refreshUnread);window.addEventListener('realtime-update',refreshUnread);});
-onUnmounted(()=>{stopRealtime();window.removeEventListener('notifications-updated',refreshUnread);window.removeEventListener('realtime-update',refreshUnread);window.removeEventListener('profile-updated',profileUpdated);axios.interceptors.response.eject(authInterceptor);});
+onUnmounted(()=>{stopRealtime();window.removeEventListener('notifications-updated',refreshUnread);window.removeEventListener('realtime-update',refreshUnread);window.removeEventListener('profile-updated',profileUpdated);window.removeEventListener('session-replaced',sessionReplaced);authChannel?.close();axios.interceptors.response.eject(authInterceptor);});
 const authInterceptor=axios.interceptors.response.use(r=>r,e=>{if(e.response?.status===401){currentUser.value='';}return Promise.reject(e);});
-async function submitAuth(){ busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{currentUser.value=username.value;refreshUnread();}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
-async function accountAction(){if(!currentUser.value){return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});currentUser.value='';router.replace('/');}catch{notice.value='退出失败，请稍后重试';}}
+async function submitAuth(){if(busy.value)return; busy.value=true;error.value='';try{const headers=await csrf();await api.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers});if(registering.value){registering.value=false;error.value='注册成功，请登录';}else{await restoreSession();authChannel?.postMessage('login');}password.value='';}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'用户名已存在':'操作失败，请检查账号密码或稍后重试';}finally{busy.value=false;}}
+async function accountAction(){if(!currentUser.value){return;}try{await api.post('/api/auth/logout',null,{headers:await csrf()});sessionRequest++;currentUser.value='';authChannel?.postMessage('logout');router.replace('/');}catch{notice.value='退出失败，请稍后重试';}}
 const notice = ref('');
 function openSection(name: string) { if(name==='校园地图'){router.push('/campus');return;}  if(name==='个人主页'){router.push('/my/products');return;}  if(name==='二手市场'){router.push('/market');return;}  notice.value = `${name}正在迁移，完成后即可使用。`; }
 </script>
@@ -56,5 +60,6 @@ function openSection(name: string) { if(name==='校园地图'){router.push('/cam
 /* Navigation and business content occupy separate viewport regions. */
 html,body,#app{height:100%;overflow:hidden}.landing{height:100dvh;min-height:0;overflow:hidden}.page-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;scrollbar-gutter:stable}.page-content>.welcome{flex:1;flex-shrink:0}.page-content>footer{flex-shrink:0}.page-content>.market,.page-content>.my-products{flex:1 0 auto}.navigation{height:106px;max-height:106px;overflow:hidden}@media(max-width:850px){.navigation{height:125px;max-height:125px}}
 .notification-bubble{position:relative;display:inline-flex;color:white;text-decoration:none;margin-right:12px}.notification-bubble svg{width:28px;height:28px}.notification-bubble b{position:absolute;right:-10px;top:-7px;min-width:17px;height:17px;border-radius:10px;padding:1px 4px;background:#d84b46;color:white;font-size:10px;text-align:center;line-height:15px}
+@media(max-width:550px){.account{max-width:100%;min-width:0}.account>span{min-width:0;overflow:hidden;text-overflow:ellipsis}.account img,.account .notification-bubble,.account .logout-button{flex-shrink:0}}
 </style>
 

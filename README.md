@@ -75,17 +75,28 @@ npm run dev
 
 两者需要 PyMySQL 和环境变量配置，执行前阅读脚本；不代表旧账号、旧求购、评论和聊天已全部导入。数据库内容、密码、依赖、日志和本地截图不提交 Git。
 
-## 构建与验证
+## 构建与隔离验证
+
+测试使用全新QA数据库和18080/15173端口，不向日常使用的数据库写入测试数据。需要本地MySQL、Python及PyMySQL；数据库账号需有创建/删除测试库的权限。先安装前端依赖并构建独立后端，避免覆盖正在运行的JAR：
 
 ```powershell
-mvn -f backend/pom.xml test
+npm --prefix frontend ci
 npm --prefix frontend run build
-python scripts/run_regression.py
+$qaBuild = Join-Path (Get-Location) '.tools/qa-build/target'
+mvn -f backend/pom.xml "-Dsmartlife.build.directory=$qaBuild" package
+python -m pip install PyMySQL
+$env:DB_USER = 'root'
+$env:DB_PASSWORD = '你的本地数据库密码'
+python scripts/run_isolated_tests.py --stress --soak
 ```
 
-前两项检查后端单元测试与前端类型/生产构建；第三项需要前后端及 MySQL 已启动，执行11组本地 API 回归。覆盖认证与CSRF、资料改名关联、商品与图片、校园图文对话、公开主页、私聊、并发会话创建、通知权限与定位，以及 SSE 实时投递、多个标签页已读同步、重连和退出关闭。
+Maven执行4项单元测试；隔离脚本自动创建全新数据库、启动独立服务，执行11组业务回归、14组并发专项和最长45秒的64并发混合读写。结束后停止QA服务并删除本次测试库，不删除真实数据库。`--keep` 可供开发者暂留QA环境进行浏览器验收，使用后需停止对应QA进程并删除该次QA数据库。
 
-测试会创建随机专用账号、讨论和消息，部分测试商品会下架；不修改真实用户资料。测试脚本随代码保留，测试产生的数据库记录不会因 Git 推送自动上传。
+原有 `run_regression.py` 及 `check_*.py` 要求显式配置隔离测试地址，不再默认向5173端口写测试数据。测试产物和日志存于本地 `.tools/`，不提交Git。市场测试自行创建样本，不依赖已清除的旧商品。
+
+已覆盖认证/CSRF、改名关联、资料/头像、商品与图片事务、出售/求购、校园图文多层回复、公开主页、私聊和通知、游标定位、并发会话创建、提交乱序、实时连接隔离/重连/退出，以及持续读写后数据库消息和通知数量的一致性。浏览器验收包含桌面及320/390像素窄屏。
+
+本机测试结果见 [全功能测试报告](docs/testing/2026-10-31-全功能测试报告.md)。市场分页返回snapshot边界，轮播翻页沿用该边界，避免新增发布挤动已打开的分页。后端断线连接清理不会阻断其他用户的推送或心跳。
 
 ## Git与来源
 

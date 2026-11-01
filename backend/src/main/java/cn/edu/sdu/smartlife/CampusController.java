@@ -18,8 +18,8 @@ public class CampusController {
  @GetMapping public List<Place> places(){return mapper.places();}
  private void require(long id){if(mapper.exists(id)==0)throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
  @GetMapping("/{id}/comments") public List<Comment> comments(@PathVariable long id,@RequestParam(defaultValue="0") long before){require(id);if(before<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);return mapper.comments(id,before);}
- @PostMapping("/{id}/comments") @ResponseStatus(HttpStatus.CREATED) public void add(@PathVariable long id,@Valid @RequestBody Input input,Principal p){require(id);if(input.parentId()!=null && mapper.parentExists(id,input.parentId())==0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);mapper.add(id,users.find(p.getName()).id(),input.content().trim(),input.parentId());}
- @DeleteMapping("/{id}/comments/{commentId}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable long id,@PathVariable long commentId,Principal p){if(mapper.delete(id,commentId,users.find(p.getName()).id())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
+ @PostMapping("/{id}/comments") @ResponseStatus(HttpStatus.CREATED) public void add(@PathVariable long id,@Valid @RequestBody Input input,Principal p){require(id);if(input.parentId()!=null && mapper.parentExists(id,input.parentId())==0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);mapper.add(id,CurrentUser.id(p),input.content().trim(),input.parentId());}
+ @DeleteMapping("/{id}/comments/{commentId}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable long id,@PathVariable long commentId,Principal p){if(mapper.delete(id,commentId,CurrentUser.id(p))!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);}
 }
 @Mapper
 interface CampusMapper {

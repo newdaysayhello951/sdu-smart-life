@@ -18,7 +18,7 @@ function syncMessages(){
   }catch{if(current===sequence)error.value='消息加载失败，请重试或检查连接';}finally{if(current===sequence){loading.value=false;job=undefined;}}
  })();job=task;return task;
 }
-async function send(){busy.value=true;error.value='';try{await axios.post('/api/chats/'+route.params.id+'/messages',{content:content.value},{headers:await headers()});content.value='';await syncMessages();}catch{error.value='发送失败，请重试';}finally{busy.value=false;}}
+async function send(){if(busy.value)return;busy.value=true;error.value='';try{await axios.post('/api/chats/'+route.params.id+'/messages',{content:content.value},{headers:await headers()});content.value='';await syncMessages();}catch{error.value='发送失败，请重试';}finally{busy.value=false;}}
 async function openChat(){sequence++;const current=sequence;job=undefined;dirty=false;messages.value=[];error.value='';focusedMessage.value=null;if(focusTimer)clearTimeout(focusTimer);await syncMessages();if(current!==sequence)return;
  const focus=Number(route.query.focus);if(!Number.isSafeInteger(focus)||focus<=0)return;await nextTick();const el=stream.value?.querySelector<HTMLElement>('[data-chat-message-id="'+focus+'"]');if(!el){error.value='对应历史消息未找到，已打开原私聊。';return;}el.scrollIntoView({behavior:'instant',block:'center'});focusedMessage.value=focus;focusTimer=setTimeout(()=>focusedMessage.value=null,2400);
 }

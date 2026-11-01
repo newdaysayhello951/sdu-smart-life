@@ -1,5 +1,5 @@
 """SSE integration through the frontend proxy; random isolated users and messages."""
-from check_auth import client,call
+from check_auth import BASE,client,call
 import json,queue,threading,uuid,urllib.request
 
 def account():
@@ -12,7 +12,7 @@ def account():
 class Stream:
  def __init__(self,c):
   self.queue=queue.Queue();self.closed=threading.Event()
-  self.response=c.open('http://127.0.0.1:5173/api/events',timeout=30)
+  self.response=c.open(BASE+'/api/events',timeout=30)
   assert self.response.headers['Content-Type'].startswith('text/event-stream')
   self.thread=threading.Thread(target=self.read,daemon=True);self.thread.start()
   assert self.event('ready')['resync'] is True
@@ -57,7 +57,7 @@ assert json.loads(call(b,f'/api/chats/{chat}/messages')[1])[0]['content']=='实�
 def post(c,token,message):
  boundary='check_'+uuid.uuid4().hex
  body=(f'--{boundary}\r\nContent-Disposition: form-data; name="message"\r\nContent-Type: application/json\r\n\r\n'+json.dumps(message)+f'\r\n--{boundary}--\r\n').encode()
- with c.open(urllib.request.Request('http://127.0.0.1:5173/api/conversations',data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})) as r:return json.loads(r.read())
+ with c.open(urllib.request.Request(BASE+'/api/conversations',data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':token})) as r:return json.loads(r.read())
 place=json.loads(call(a,'/api/campus/places')[1])[0]['id']
 root=post(a,at,{'placeId':place,'content':'实时回复测试'})['id']
 post(b,bt,{'placeId':place,'parentId':root,'content':'收到回复'})

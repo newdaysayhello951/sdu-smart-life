@@ -13,7 +13,7 @@ public class ProductManagementController {
  private final ProductMapper products;private final UserMapper users;private final ProductImageController images;
  public ProductManagementController(ProductMapper products,UserMapper users,ProductImageController images){this.products=products;this.users=users;this.images=images;}
  public record Input(@NotBlank @Size(max=120) String title,@NotBlank @Size(max=5000) String description,@NotNull @DecimalMin("0.01") @DecimalMax("99999999.99") @Digits(integer=8,fraction=2) BigDecimal price,@NotBlank @Size(max=120) String location,@Pattern(regexp="SELL|WANTED") String kind){}
- private long owner(Principal principal){return users.find(principal.getName()).id();}
+ private long owner(Principal principal){return CurrentUser.id(principal);}
  @GetMapping public List<ProductMapper.Product> mine(Principal principal){return products.mine(owner(principal));}
  @PostMapping(value="/publish",consumes="multipart/form-data")
  @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
@@ -26,9 +26,9 @@ public class ProductManagementController {
  @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
  @ResponseStatus(HttpStatus.NO_CONTENT)
  public void editWithImage(@PathVariable long id,@Valid @RequestPart("product") Input input,@RequestPart("file") org.springframework.web.multipart.MultipartFile file,Principal principal) throws java.io.IOException {
-  if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+  if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location(),input.kind())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
   images.upload(id,file,principal);
  }
- @PutMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void edit(@PathVariable long id,@Valid @RequestBody Input input,Principal principal){if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
+ @PutMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void edit(@PathVariable long id,@Valid @RequestBody Input input,Principal principal){if(products.edit(id,owner(principal),input.title(),input.description(),input.price(),input.location(),input.kind())!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
  @PostMapping("/{id}/withdraw") @ResponseStatus(HttpStatus.NO_CONTENT) public void withdraw(@PathVariable long id,Principal principal){if(products.withdraw(id,owner(principal))!=1)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"商品不存在或不可操作");}
 }

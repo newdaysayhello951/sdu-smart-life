@@ -25,15 +25,16 @@ public class RealtimeHub {
  public RealtimeHub(ApplicationEventPublisher events){this.events=events;}
 
  public SseEmitter subscribe(long userId,HttpSession session){
-  var emitter=new SseEmitter(15*60*1000L);
+  var emitter=createEmitter();
   var connection=new Connection(userId,session,emitter);
   connections.add(connection);
   emitter.onCompletion(()->connections.remove(connection));
   emitter.onTimeout(()->close(connection));
   emitter.onError(error->connections.remove(connection));
-  send(connection,"ready",Map.of("resync",true));
+  send(connection,"ready",Map.of("resync",true,"userId",userId));
   return emitter;
  }
+ SseEmitter createEmitter(){return new SseEmitter(15*60*1000L);}
  public void changed(long userId,String kind,Long chatId){events.publishEvent(new Change(userId,kind,chatId));}
  @TransactionalEventListener(phase=TransactionPhase.AFTER_COMMIT,fallbackExecution=true)
  public void deliver(Change change){
@@ -51,10 +52,10 @@ public class RealtimeHub {
   synchronized(connection){
    if(!authorized(connection)){close(connection);return;}
    try{connection.emitter().send(SseEmitter.event().name(event).reconnectTime(3000).data(data));}
-   catch(IOException|IllegalStateException disconnected){close(connection);}
+   catch(IOException|IllegalStateException disconnected){connections.remove(connection);}
   }
  }
- private void close(Connection connection){connections.remove(connection);connection.emitter().complete();}
+ private void close(Connection connection){synchronized(connection){if(!connections.remove(connection))return;try{connection.emitter().complete();}catch(IllegalStateException alreadyDisconnected){ /* Container owns completion after a transport error. */ }}}
  public void disconnect(HttpSession session){if(session!=null)connections.stream().filter(c->c.session()==session).forEach(this::close);}
  @Scheduled(fixedDelay=20000) public void heartbeat(){connections.forEach(c->send(c,"heartbeat",Map.of("alive",true)));}
  @PreDestroy public void shutdown(){connections.forEach(this::close);}

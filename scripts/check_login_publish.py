@@ -1,4 +1,4 @@
-from check_auth import client,call
+from check_auth import BASE,client,call
 import json,uuid,urllib.request,urllib.error
 from pathlib import Path
 c=client()
@@ -12,7 +12,7 @@ item={'title':'首次带图发布','description':'回归验证','price':'12.50',
 def publish(photo,path='/api/my/products/publish'):
  boundary=uuid.uuid4().hex
  body=(f'--{boundary}\r\nContent-Disposition: form-data; name="product"\r\nContent-Type: application/json\r\n\r\n'+json.dumps(item)+f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n').encode()+photo+f'\r\n--{boundary}--\r\n'.encode()
- req=urllib.request.Request('http://127.0.0.1:5173'+path,data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':t})
+ req=urllib.request.Request(BASE+path,data=body,headers={'Content-Type':'multipart/form-data; boundary='+boundary,'X-XSRF-TOKEN':t})
  try:
   with c.open(req) as r:return r.status,r.read()
  except urllib.error.HTTPError as e:return e.code,e.read()
