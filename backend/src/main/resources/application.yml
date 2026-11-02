@@ -21,3 +21,11 @@ management:
     web:
       exposure:
         include: health,info
+campus:
+  ai:
+    enabled: ${CAMPUS_AI_ENABLED:false}
+    env-file: ${CAMPUS_AI_ENV_FILE:.env.ai}
+    model-dir: ${CAMPUS_AI_MODEL_DIR:.tools/ai}
+    qdrant-url: ${CAMPUS_AI_QDRANT_URL:http://127.0.0.1:6333}
+    collection: ${CAMPUS_AI_COLLECTION:campus_sdu_e5_v1}
+    ingest-on-start: ${CAMPUS_AI_INGEST_ON_START:true}

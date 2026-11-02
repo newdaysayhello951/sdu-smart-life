@@ -1,7 +1,7 @@
 """Run tests on a new QA database/ports, never on the active application database.
 Requires PyMySQL, a built backend JAR and installed frontend dependencies.
 """
-import argparse,json,os,socket,subprocess,sys,time,urllib.request,uuid
+import argparse,json,os,socket,subprocess,sys,time,urllib.request,uuid,tempfile
 from pathlib import Path
 import pymysql
 
@@ -16,9 +16,9 @@ def main():
  with connection.cursor() as cursor:cursor.execute('CREATE DATABASE `'+name+'` CHARACTER SET utf8mb4')
  env=dict(os.environ,DB_URL='jdbc:mysql://127.0.0.1:3306/'+name+'?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai',TEST_DATABASE=name,TEST_BASE_URL='http://127.0.0.1:15173',API_PROXY_TARGET='http://127.0.0.1:18080')
  logs=[];processes=[];success=False
- temp=ROOT/'.tools'/'qa-tmp';temp.mkdir(exist_ok=True)
+ temp=Path(tempfile.gettempdir())/'sdu-campus-ai-native';temp.mkdir(exist_ok=True)
  try:
-  for label,args in [('backend',['java','-Djava.io.tmpdir='+str(temp),'-jar',str(options.jar),'--server.port=18080']),('frontend',['node','frontend/node_modules/vite/bin/vite.js','--config','frontend/vite.config.ts','--host','127.0.0.1','--port','15173','--strictPort'])]:
+  for label,args in [('backend',[os.getenv('QA_JAVA_EXECUTABLE','java'),'-Djava.io.tmpdir='+str(temp),'-jar',str(options.jar),'--server.port=18080']),('frontend',['node','frontend/node_modules/vite/bin/vite.js','--config','frontend/vite.config.ts','--host','127.0.0.1','--port','15173','--strictPort'])]:
    log=(ROOT/'.tools'/('qa-'+label+'.log')).open('wb');logs.append(log)
    if label=='frontend':args=['node','node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','15173','--strictPort']
    processes.append(subprocess.Popen(args,cwd=ROOT if label=='backend' else ROOT/'frontend',env=env,stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0)))
@@ -42,7 +42,8 @@ def main():
    print('QA retained for verification: '+name,flush=True)
   else:
    for process in reversed(processes):
-    process.terminate()
+    if os.name=='nt':subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    else:process.terminate()
     try:process.wait(timeout=10)
     except subprocess.TimeoutExpired:process.kill();process.wait()
    for log in logs:log.close()

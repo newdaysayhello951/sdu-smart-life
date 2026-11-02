@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref,computed,onMounted,onUnmounted} from 'vue';import ThreadBoard from './ThreadBoard.vue';import axios from 'axios';
+import {ref,computed,onMounted,onUnmounted,watch} from 'vue';import ThreadBoard from './ThreadBoard.vue';import axios from 'axios';import {useRoute} from 'vue-router';const route=useRoute();
 interface Place{id:number;name:string;description:string;mapX:number|null;mapY:number|null;mapWidth:number|null;mapHeight:number|null;commentCount:number}
 const places=ref<Place[]>([]),selected=ref<Place|null>(null),error=ref(''),discussion=ref<HTMLDialogElement|null>(null),hover=ref<Place|null>(null),tipX=ref(0),tipY=ref(0),zoom=ref(1),search=ref('');
 const mapped=computed(()=>places.value.filter(p=>p.mapX!==null)),filtered=computed(()=>places.value.filter(p=>p.name.includes(search.value)));
@@ -10,7 +10,9 @@ function hide(){hideTimer=setTimeout(()=>hover.value=null,180);}
 async function refreshPlaces(){places.value=(await axios.get('/api/campus/places')).data;}
 function enter(p:Place){selected.value=p;hover.value=null;error.value='';discussion.value?.showModal();}
 onUnmounted(()=>clearTimeout(hideTimer));
-onMounted(async()=>{try{await refreshPlaces();}catch{error.value='地图地点加载失败，请刷新重试';}});
+function routePlace(){const p=places.value.find(p=>String(p.id)===String(route.query.place));if(p)enter(p);}
+watch(()=>route.query.place,routePlace);
+onMounted(async()=>{try{await refreshPlaces();routePlace();}catch{error.value='地图地点加载失败，请刷新重试';}});
 </script>
 <template><section class="campus"><header class="map-heading"><div><p>SDU QINGDAO / CAMPUS Q&A</p><h1>在校园里，找到答案。</h1><span>鼠标停留建筑上，查看地点和讨论；点击进入提问与解答。</span></div><div class="zoom"><button @click="zoom=Math.max(1,zoom-.5)" :disabled="zoom<=1" aria-label="缩小地图">−</button><span>{{zoom*100}}%</span><button @click="zoom=Math.min(4,zoom+.5)" :disabled="zoom>=4" aria-label="放大地图">＋</button></div></header><p role="alert">{{error}}</p><div class="map-layout"><div class="map-scroll" @scroll="hover=null"><div class="map-canvas" :style="{width:zoom*100+'%'}"><img src="/assets/campus/qingdao-campus.jpg" alt="山东大学青岛校区规划图，建筑编号与位置见图" draggable="false"><button v-for="p in mapped" :key="p.id" class="hotspot" :aria-label="p.name+'，'+p.commentCount+'条讨论，进入'" :style="{left:p.mapX+'%',top:p.mapY+'%',width:p.mapWidth+'%',height:p.mapHeight+'%'}" @mouseenter="show(p,$event)" @mouseleave="hide" @focus="show(p,$event)" @blur="hide" @click="enter(p)"></button></div></div><aside><label>查找地点<input v-model="search" placeholder="建筑编号、宿舍或场馆"></label><p>{{mapped.length}} 个地图热点</p><button v-for="p in filtered" :key="p.id" @click="enter(p)">{{p.name}}<small>{{p.commentCount}} 条讨论</small></button><p class="plan-note">依据提供的规划图标注。图纸编号不代表当前实际命名；未编号建筑按方位区分。</p></aside></div>
 <Teleport to="body"><div v-if="hover" class="map-tooltip" :style="{left:tipX+'px',top:tipY+'px'}" @mouseenter="keepTip" @mouseleave="hide"><strong>{{hover.name}}</strong><p>{{hover.commentCount}} 条讨论 · 校园问答</p><button @click="enter(hover)">进入地点 →</button></div></Teleport>

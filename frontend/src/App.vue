@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
+import CampusAssistant from './CampusAssistant.vue';
 import {startRealtime,stopRealtime} from './realtime';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 const route=useRoute(), router=useRouter();
@@ -36,6 +37,7 @@ function openSection(name: string) { if(name==='失物回家'){router.push('/los
    <nav aria-label="主导航"><RouterLink to="/" :class="{active:route.path==='/'}">首页</RouterLink><button @click="openSection('二手市场')">二手市场</button><button @click="openSection('失物回家')">失物回家</button><button @click="openSection('校园地图')">校园地图</button><button @click="openSection('个人主页')">个人主页</button></nav>
    <div class="account"><RouterLink class="notification-bubble" to="/notifications" :aria-label="'消息中心，未读'+unreadCount+'条'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="16" cy="10" r="1" fill="currentColor"/></svg><b v-if="unreadCount>0">{{Math.min(99,unreadCount)}}</b></RouterLink><img :src="'/api/profile/avatar?v='+avatarVersion" alt=""><span>{{ currentUser }} · 已登录</span><button class="logout-button" @click="accountAction">退出登录</button></div>
   </header></Teleport>
+  <CampusAssistant v-if="currentUser && !checking" :key="currentUser" />
   <div v-if="currentUser" class="page-content">
   <section v-if="currentUser && route.path==='/'" class="welcome">
    <p class="eyebrow"><span></span> SHANDONG UNIVERSITY · CAMPUS LIFE</p>

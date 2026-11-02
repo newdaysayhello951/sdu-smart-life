@@ -112,3 +112,16 @@ Maven执行4项单元测试；隔离脚本自动创建全新数据库、启动�
 - 个人主页可编辑、替换图片、结束寻找。失物类型 LOST/FOUND 与 SELL/WANTED 分开展示，复用现有发布及权限接口；失物金额固定为 0，页面不显示价格。
 - 业务信息和用户上传图片均存 MySQL；按钮装饰为前端 SVG。无需新增数据库迁移。
 - `scripts/check_lost_found.py` 已纳入隔离回归（12 组），不得直接针对实际业务库运行。
+
+
+### 校园智慧问答助手「汐月」
+Java 21 / Spring Boot 3.5.7 / Spring AI 1.1.0；独立 multilingual-e5-small ONNX 模型（Java ONNX Runtime 1.20.0、DJL Tokenizers），Qdrant 1.15.4 + BM25 + RRF 混合检索。MySQL 保存官方知识原文、片段、向量、来源时间及用户隔离的聊天历史，Qdrant 仅保存可重建索引。无 Python AI 服务、无其他项目数据库连接。
+
+1. `python scripts/setup_campus_ai.py` 安装校园项目独立模型和 Qdrant，默认从公开上游下载；Hugging Face 直连不可用时可设置 `HF_MIRROR=1` 使用镜像。
+2. 按 `.env.example` 在仓库根目录创建 `.env.ai`，填写自己的模型 API；只读取 LLM_BASE_URL、LLM_MODEL、LLM_API_KEY / DEEPSEEK_API_KEY，不复制其他项目环境、业务数据或服务。
+3. Maven 构建后，设置 `DB_PASSWORD`，运行 `powershell -ExecutionPolicy Bypass -File scripts/start_campus_ai.ps1 -StartBackend`。确保 8080 没有旧服务占用。单独启动依赖时不传 -StartBackend。
+4. 登录后点击可拖动的小海妖打开对话。海棠、山大红飘带与书本、青岛海鸥/海浪/贝壳装饰；眨眼、招手、摆尾、悬停及拖动反馈，不自动左右移动，可收起。
+
+首次启动按 `campus-knowledge-sources.json` 低频采集山大官方公开指导资料；默认每天更新，失败保留已有版本。回答带来源、适用校区和采集时间。没有实时人数能力，重要政策应核对官方通知。只读 Agent 工具查询知识、地点、在发布商品/失物和本人通知；不会代发私信、修改资料或交易。每人一个并发回答，全局上限4，工具最多6次、规划最多3轮，支持取消和超时。界面安全渲染 Markdown，禁用HTML和图片注入，链接限制为本站业务入口和山大官方 HTTPS。
+
+常规隔离回归为13组；设置 `AI_LIVE_TESTS=1` 并启用AI后，`scripts/check_campus_ai.py` 可验证真实模型（会产生模型调用费用），仅允许15173 QA端口。测试集合应使用独立 `CAMPUS_AI_COLLECTION`，不得混用实际知识索引。
