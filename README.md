@@ -4,6 +4,8 @@
 
 ## 本地运行
 
+新增独立手机端在 `mobile-app/`，采用 Vue 3 + Capacitor，使用同一 Java 后端。手机网页预览端口 5174，Android 构建及原生网络说明见 [手机端文档](mobile-app/README.md)。电脑网页仍位于 `frontend/`。
+
 需要 JDK 21+、Maven 3.9+、Node.js 22 与 MySQL 8。先创建空数据库：
 
 ```sql

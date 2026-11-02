@@ -1,0 +1,46 @@
+<script setup lang="ts">
+import {ref,computed,onMounted,onUnmounted,watch} from 'vue';
+import {useRoute,useRouter,RouterLink,RouterView} from 'vue-router';
+import axios from 'axios';
+import {CapacitorCookies} from '@capacitor/core';
+import {native,serverOrigin,saveServer} from './transport';
+import CampusAssistant from '../../frontend/src/CampusAssistant.vue';
+import {startRealtime,stopRealtime} from '../../frontend/src/realtime';
+const route=useRoute(),router=useRouter();
+const user=ref(''),checking=ref(true),busy=ref(false),registering=ref(false),username=ref(''),password=ref(''),error=ref(''),unread=ref(0),avatar=ref(0),online=ref(navigator.onLine);
+const settings=ref(native&&!serverOrigin()),server=ref(serverOrigin()||'http://10.0.2.2:8080'),settingsError=ref('');
+const title=computed(()=>route.path.startsWith('/market')?'校园好物':route.path.startsWith('/lost-found')?'失物回家':route.path.startsWith('/campus')?'山海地图':route.path.startsWith('/notifications')||route.path.startsWith('/messages')?'校园消息':route.path.startsWith('/my')?'我的校园':route.path.startsWith('/people')?'同学主页':'山海校园');
+const tabs=[{to:'/',label:'首页',icon:'⌂'},{to:'/market',label:'好物',icon:'◇'},{to:'/campus',label:'地图',icon:'⌖'},{to:'/lost-found',label:'失物',icon:'❀'},{to:'/my/products',label:'我的',icon:'♙'}];
+async function csrf(){return {'X-XSRF-TOKEN':(await axios.get('/api/auth/csrf')).data.token};}
+let identity=0,unreadPending:Promise<void>|undefined;
+async function refreshUnread(){if(!user.value)return;if(unreadPending)return unreadPending;const current=user.value;unreadPending=(async()=>{try{const {data}=await axios.get('/api/notifications/unread');if(current===user.value)unread.value=data.count;}catch{}})().finally(()=>unreadPending=undefined);return unreadPending;}
+async function restore(showLoading=true){const n=++identity;if(showLoading)checking.value=true;try{if(native&&!serverOrigin())return;const {data}=await axios.get('/api/auth/me');if(n===identity)user.value=data.username;}catch(e){if(n===identity){user.value='';if(!axios.isAxiosError(e)||!e.response)error.value='暂时连不上校园服务，请检查网络或服务地址';}}finally{if(n===identity)checking.value=false;}}
+async function login(){if(busy.value)return;busy.value=true;error.value='';try{await axios.post('/api/auth/'+(registering.value?'register':'login'),{username:username.value,password:password.value},{headers:await csrf()});password.value='';if(registering.value){registering.value=false;error.value='注册成功，现在可以登录了';}else await restore();}catch(e){error.value=axios.isAxiosError(e)&&e.response?.status===409?'这个用户名已经有人使用':axios.isAxiosError(e)&&e.response?.status===401?'账号或密码不正确':'暂时无法完成，请检查网络和输入后重试';}finally{busy.value=false;}}
+async function logout(){if(busy.value)return;busy.value=true;try{await axios.post('/api/auth/logout',null,{headers:await csrf()});identity++;user.value='';unread.value=0;await router.replace('/');}catch{error.value='退出失败，请重试';}finally{busy.value=false;}}
+async function configure(){settingsError.value='';try{const old=serverOrigin();const origin=saveServer(server.value);if(old&&old!==origin){stopRealtime();user.value='';await CapacitorCookies.clearCookies({url:old});}settings.value=false;error.value='';await restore();}catch(e){settingsError.value=e instanceof Error?e.message:'地址无法保存';}}
+function profile(){avatar.value++;void restore();}
+function replaced(){user.value='';void restore();}
+function connectivity(){online.value=navigator.onLine;if(online.value&&user.value){startRealtime();void refreshUnread();}}
+function foreground(e:Event){if((e as CustomEvent<boolean>).detail){void restore(false);if(user.value)startRealtime();}else stopRealtime();}
+const interceptor=axios.interceptors.response.use(r=>r,e=>{if(e.response?.status===401){user.value='';unread.value=0;}return Promise.reject(e);});
+watch(user,value=>{if(value){startRealtime();void refreshUnread();}else stopRealtime();});
+watch(()=>route.fullPath,()=>{document.querySelector('.mobile-content')?.scrollTo({top:0});});
+onMounted(()=>{void restore();window.addEventListener('profile-updated',profile);window.addEventListener('session-replaced',replaced);window.addEventListener('realtime-update',refreshUnread);window.addEventListener('notifications-updated',refreshUnread);window.addEventListener('online',connectivity);window.addEventListener('offline',connectivity);window.addEventListener('mobile-app-state',foreground);});
+onUnmounted(()=>{stopRealtime();axios.interceptors.response.eject(interceptor);window.removeEventListener('profile-updated',profile);window.removeEventListener('session-replaced',replaced);window.removeEventListener('realtime-update',refreshUnread);window.removeEventListener('notifications-updated',refreshUnread);window.removeEventListener('online',connectivity);window.removeEventListener('offline',connectivity);window.removeEventListener('mobile-app-state',foreground);});
+</script>
+<template>
+<div class="mobile-shell">
+ <header v-if="user" class="mobile-header"><RouterLink to="/" class="mobile-seal">山大</RouterLink><div><small>SDU · QINGDAO</small><strong>{{title}}</strong></div><RouterLink class="mobile-inbox" to="/notifications" :aria-label="'消息中心，未读'+unread+'条'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h8" stroke="currentColor"/></svg><b v-if="unread">{{Math.min(99,unread)}}</b></RouterLink></header>
+ <p v-if="!online" class="offline-banner" role="status">网络已断开，恢复后将重新连接</p>
+ <main v-if="checking" class="mobile-loading" role="status">正在连接山海校园…</main>
+ <main v-else-if="!user" class="mobile-auth"><div class="auth-art"><span class="mobile-seal">山大</span><p>SHANDONG UNIVERSITY · QINGDAO</p><h1>山海之间，<br>与你相遇。</h1><span>好物、问答与校园里的每一次连接。</span></div><form @submit.prevent="login"><p class="mobile-eyebrow">WELCOME TO CAMPUS</p><h2>{{registering?'加入山海校园':'欢迎回到校园'}}</h2><label>用户名<input v-model="username" required autocomplete="username" pattern="[a-zA-Z0-9_\-]{3,32}" maxlength="32" placeholder="3–32 位字母、数字或下划线"></label><label>密码<input v-model="password" required type="password" minlength="8" maxlength="64" :autocomplete="registering?'new-password':'current-password'" placeholder="至少 8 位密码"></label><p class="mobile-error" role="alert">{{error}}</p><button class="mobile-primary" :disabled="busy">{{busy?'连接中…':registering?'注册账号':'登录校园'}}</button><button class="mobile-text" type="button" @click="registering=!registering;error=''">{{registering?'已有账号？去登录':'还没有账号？立即注册'}}</button><button v-if="native" type="button" class="mobile-text" @click="settings=true">连接校园服务</button></form></main>
+ <main v-else class="mobile-content">
+  <template v-if="route.path==='/'"><section class="mobile-hero"><p>QINGDAO · MY CAMPUS</p><h1>在山大，<br>发现日常的<span>更多可能。</span></h1><span>让闲置流转，让答案相遇。</span><RouterLink to="/market">发现校园好物 ↗</RouterLink></section><section class="mobile-home-grid"><RouterLink to="/market"><i>◇</i><strong>校园好物</strong><span>闲置转让 · 求购心愿</span></RouterLink><RouterLink to="/lost-found"><i>❀</i><strong>失物回家</strong><span>海棠猫陪宝贝回家</span></RouterLink><RouterLink to="/campus"><i>⌖</i><strong>山海地图</strong><span>在每一个地点找到答案</span></RouterLink><RouterLink to="/notifications"><i>☏</i><strong>校园消息</strong><span>私聊与地点回复</span></RouterLink></section><section class="mobile-home-note"><p class="mobile-eyebrow">TOGETHER IN SDU</p><h2>校园生活，有你参与。</h2><p>发布一件好物，解答一个疑问，<br>或让一份遗失的牵挂重新回家。</p><RouterLink to="/my/products">去我的主页发布 →</RouterLink></section></template>
+  <section v-if="route.path==='/my/products'" class="mobile-account"><img v-mobile-src="'/api/profile/avatar?v='+avatar" alt="我的头像"><div><strong>{{user}}</strong><small>山东大学 · 我的校园日常</small></div><button @click="logout" :disabled="busy">退出</button></section>
+  <RouterView v-if="route.path!=='/'" :key="user"/>
+ </main>
+ <nav v-if="user" class="mobile-tabs" aria-label="手机主导航"><RouterLink v-for="tab in tabs" :key="tab.to" :to="tab.to" :class="{current:tab.to==='/'?route.path==='/':route.path.startsWith(tab.to)}"><span aria-hidden="true">{{tab.icon}}</span>{{tab.label}}</RouterLink></nav>
+ <CampusAssistant v-if="user&&!checking" :key="user"/>
+ <div v-if="settings" class="mobile-settings" role="dialog" aria-modal="true" aria-labelledby="server-title"><form @submit.prevent="configure"><p class="mobile-eyebrow">校园服务连接</p><h2 id="server-title">连接你的校园</h2><p>填写 Java 服务地址。真机开发请使用电脑的局域网 IP；Android 模拟器可使用 10.0.2.2。</p><label>服务地址<input v-model="server" type="url" required placeholder="https://campus.example.com" autocomplete="off"></label><p class="mobile-error" role="alert">{{settingsError}}</p><button class="mobile-primary">保存并连接</button><button v-if="serverOrigin()" type="button" class="mobile-text" @click="settings=false">返回</button></form></div>
+</div>
+</template>

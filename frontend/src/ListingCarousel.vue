@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import {ref,watch,computed} from 'vue';import axios from 'axios';import {RouterLink} from 'vue-router';
+import {ref,watch,computed,inject} from 'vue';import axios from 'axios';import {RouterLink} from 'vue-router';
 const props=defineProps<{kind:'SELL'|'WANTED'|'LOST'|'FOUND';keyword?:string}>();
 const isLost=computed(()=>props.kind==='LOST'||props.kind==='FOUND');const label=computed(()=>({SELL:'同学们在卖',WANTED:'同学们想要',LOST:'失物寻找',FOUND:'宝贝回家'}[props.kind]));
-const items=ref<any[]>([]),page=ref(1),total=ref(0),busy=ref(false),error=ref('');const pages=computed(()=>Math.ceil(total.value/3));let snapshot=0,seq=0,start=0,startY=0,lastWheel=0,lastSwipe=0;
-async function load(n=1){const s=++seq;busy.value=true;error.value='';try{const {data}=await axios.get('/api/products',{params:{kind:props.kind,keyword:props.keyword||'',page:n,size:3,snapshot}});if(s!==seq)return;snapshot=data.snapshot;items.value=data.items;total.value=data.total;page.value=n;}catch{error.value='加载失败，请重试';}finally{if(s===seq)busy.value=false;}}
+const pageSize=inject<number>('campus-listing-page-size',3);
+const items=ref<any[]>([]),page=ref(1),total=ref(0),busy=ref(false),error=ref('');const pages=computed(()=>Math.ceil(total.value/pageSize));let snapshot=0,seq=0,start=0,startY=0,lastWheel=0,lastSwipe=0;
+async function load(n=1){const s=++seq;busy.value=true;error.value='';try{const {data}=await axios.get('/api/products',{params:{kind:props.kind,keyword:props.keyword||'',page:n,size:pageSize,snapshot}});if(s!==seq)return;snapshot=data.snapshot;items.value=data.items;total.value=data.total;page.value=n;}catch{error.value='加载失败，请重试';}finally{if(s===seq)busy.value=false;}}
 function move(n:number){if(!busy.value&&n>=1&&n<=pages.value)load(n);}
 function pointerEnd(e:PointerEvent){const diff=e.clientX-start;if(Math.abs(diff)>55&&Math.abs(e.clientY-startY)<Math.abs(diff)){lastSwipe=Date.now();move(page.value+(diff<0?1:-1));}}
 function suppressSwipeClick(e:MouseEvent){if(Date.now()-lastSwipe<400){e.preventDefault();e.stopPropagation();}}
