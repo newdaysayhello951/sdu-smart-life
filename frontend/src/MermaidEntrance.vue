@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue';
+import PngMermaid from './PngMermaid.vue';
 const run=ref(0);
 defineExpose({replay:()=>run.value++});
 </script>
@@ -7,7 +8,7 @@ defineExpose({replay:()=>run.value++});
 <defs><linearGradient id="sea-tail" x2="1" y2="1"><stop stop-color="#a9f0e7"/><stop offset=".5" stop-color="#54b5c6"/><stop offset="1" stop-color="#8b8acb"/></linearGradient><linearGradient id="sea-hair" x2=".8" y2="1"><stop stop-color="#f8f3ff"/><stop offset=".6" stop-color="#c6bee8"/><stop offset="1" stop-color="#91d4de"/></linearGradient><radialGradient id="sea-water"><stop stop-color="#d0fbf9" stop-opacity=".8"/><stop offset="1" stop-color="#5aa7bd" stop-opacity="0"/></radialGradient><clipPath id="sea-reveal"><rect class="reveal" x="0" y="-150" width="240" height="420"/></clipPath></defs>
 <g class="water"><ellipse cx="120" cy="265" rx="105" ry="22" fill="url(#sea-water)"/><ellipse v-for="n in 3" :key="n" :class="'ripple ripple-'+n" cx="120" cy="265" :rx="28+n*17" :ry="5+n*3" fill="none" stroke="#a9e7ed" stroke-width="1.4"/><circle v-for="n in 4" :key="'b'+n" class="bubble" :style="{'--delay':n*.18+'s'}" :cx="80+n*14" cy="266" :r="2+n%2" fill="none" stroke="#c9ffff"/></g>
 <g clip-path="url(#sea-reveal)"><g class="performer">
-<image class="portrait" href="/assets/assistant/sea-sprite-clean.png" x="25" y="8" width="190" height="252" preserveAspectRatio="xMidYMid meet"/>
+<foreignObject x="25" y="8" width="190" height="252"><PngMermaid /></foreignObject>
 </g></g>
 <g class="splash" fill="none" stroke="#baf4f2" stroke-linecap="round"><path d="M95 265Q64 213 47 237M110 267Q85 207 82 224M138 266Q170 201 190 235M150 267Q188 239 202 251" stroke-width="3"/><ellipse cx="120" cy="265" rx="70" ry="11" stroke-width="2"/></g>
 <g v-for="n in 16" :key="'d'+n" class="droplet" :style="{'--dx':(Math.cos(n*2.4)* (30+n*3))+'px','--dy':(-28-n%5*14)+'px','--delay':(4.55+n%4*.04)+'s'}"><ellipse :cx="120+(n%3-1)*10" cy="258" :rx="1.2+n%3*.5" :ry="2.5+n%3" fill="#bcefee" stroke="#f3ffff" stroke-width=".5"/></g>
