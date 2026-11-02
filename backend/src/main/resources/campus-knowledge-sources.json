@@ -6,47 +6,147 @@
   },
   {
     "url": "https://library.sdu.edu.cn/page/lending.html",
-    "title": "山东大学图书馆入馆与文献借还规则",
-    "campus": "济南、青岛"
-  },
-  {
-    "url": "https://library.sdu.edu.cn/page/id-269.html",
-    "title": "山东大学图书馆空间与设施",
-    "campus": "须核对分馆"
+    "title": "借阅服务",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
     "url": "https://nc.sdu.edu.cn/info/1113/2060.htm",
     "title": "校园网三地一体化自助服务中心操作手册",
-    "campus": "济南、青岛、威海"
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
     "url": "https://nc.sdu.edu.cn/info/1113/2232.htm",
-    "title": "校园网频繁认证问题与解决方法",
-    "campus": "山东大学；以原文适用范围为准"
+    "title": "关于部分用户上网频繁认证问题的说明及解决方法",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
-    "url": "https://nc.sdu.edu.cn/fwml/xyk.htm",
-    "title": "校园卡服务指南与办事入口",
-    "campus": "山东大学；须核对校区"
+    "url": "https://nc.sdu.edu.cn/pdf/xyksysc.pdf",
+    "title": "山东大学校园卡使用手册",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
-    "url": "https://nc.sdu.edu.cn/fwml/dzyj.htm",
-    "title": "山东大学电子邮件服务指南",
-    "campus": "山东大学"
+    "url": "https://nc.sdu.edu.cn/info/1108/2056.htm",
+    "title": "校园卡如何充值",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
-    "url": "https://nc.sdu.edu.cn/fwml/zzdy.htm",
-    "title": "山东大学自助打印服务指南",
-    "campus": "山东大学；须核对校区"
+    "url": "https://nc.sdu.edu.cn/info/1108/2058.htm",
+    "title": "校园卡如何更改密码",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
-    "url": "https://nc.sdu.edu.cn/lxrvpn.htm",
-    "title": "山东大学校外访问零信任VPN指南",
-    "campus": "山东大学"
+    "url": "https://nc.sdu.edu.cn/info/1110/2149.htm",
+    "title": "如何开通邮箱二次验证",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
   },
   {
-    "url": "https://nc.sdu.edu.cn/fwml/yhzn.htm",
-    "title": "山东大学信息化用户指南",
-    "campus": "山东大学"
+    "url": "https://nc.sdu.edu.cn/info/1027/1224.htm",
+    "title": "收不到某个邮箱发来的邮件",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1110/1800.htm",
+    "title": "邮件系统升级新功能 防钓鱼防盗号",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1112/1804.htm",
+    "title": "山东大学自助打印服务操作说明",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1106/2055.htm",
+    "title": "信息化服务指南",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/pdf/xxhfwznxsb.pdf",
+    "title": "山东大学信息化服务指南（学生版 ）",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1113/2228.htm",
+    "title": "关于上网认证时提示“BRAS无响应”的解决办法",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1113/1811.htm",
+    "title": "Eduroam全球教育无线网络漫游服务使用须知",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1113/1810.htm",
+    "title": "山东大学学生网管会报修电话及值班时间",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1113/1809.htm",
+    "title": "上网认证客户端",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1109/1791.htm",
+    "title": "WebVPN远程访问使用说明",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/info/1034/2013.htm",
+    "title": "VPN高版本客户端下载",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://library.sdu.edu.cn/page/weituojieyue.html",
+    "title": "委托借阅",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://library.sdu.edu.cn/page/id-318.html",
+    "title": "预约借阅",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://library.sdu.edu.cn/page/information_list.html",
+    "title": "咨询通道",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://library.sdu.edu.cn/page/carsi.html",
+    "title": "校外访问",
+    "campus": "山东大学通用服务；校区差异及适用人群以原文为准"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/cjwt.htm",
+    "title": "零信任VPN常见问题",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/Windowsxt.htm",
+    "title": "Windows零信任VPN安装与使用",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/Androidxt.htm",
+    "title": "Android零信任VPN安装与使用",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/MACxt.htm",
+    "title": "macOS零信任VPN安装与使用",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/IOSxt.htm",
+    "title": "iOS零信任VPN安装与使用",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://nc.sdu.edu.cn/lxrvpn/windowsxtcjwt.htm",
+    "title": "Windows零信任VPN故障排查",
+    "campus": "山东大学通用网络服务"
+  },
+  {
+    "url": "https://library.sdu.edu.cn/UserFiles/site/2024%E5%B9%B4%E8%AF%BB%E8%80%85%E6%9C%8D%E5%8A%A1%E6%8C%87%E5%8D%97.pdf",
+    "title": "山东大学图书馆2024年读者服务指南（历史版本，核对最新规定）",
+    "campus": "济南、青岛；按正文核对分馆"
   }
 ]

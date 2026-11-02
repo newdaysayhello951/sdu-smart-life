@@ -26,7 +26,8 @@ public class CampusKnowledge {
  private volatile String syncStatus="尚未采集";private volatile String retrievalMode="尚未检索";
  private final boolean ingestOnStart;
  public CampusKnowledge(JdbcTemplate db,ObjectMapper json,CampusEmbedding embedding,CampusAiConfig config,org.springframework.transaction.PlatformTransactionManager tm,@Value("${campus.ai.ingest-on-start:true}")boolean ingestOnStart){this.db=db;this.json=json;this.embedding=embedding;this.config=config;this.tx=new TransactionTemplate(tm);this.ingestOnStart=ingestOnStart;}
- @EventListener(ApplicationReadyEvent.class) public void start(){if(config.enabled&&ingestOnStart)Thread.ofVirtual().name("campus-knowledge-import").start(this::refresh);}
+ @Value("${campus.ai.import-only:false}") private boolean importOnly;
+ @EventListener(ApplicationReadyEvent.class) public void start(){if(config.enabled&&ingestOnStart)Thread.ofVirtual().name("campus-knowledge-import").start(()->{refresh();if(importOnly)System.exit(0);});}
  @Scheduled(fixedDelayString="${campus.ai.refresh-ms:86400000}",initialDelayString="${campus.ai.refresh-ms:86400000}")public void scheduled(){if(config.enabled)refresh();}
  public Map<String,Object> status(){return Map.of("documents",db.queryForObject("SELECT COUNT(*) FROM ai_knowledge_source",Long.class),"chunks",db.queryForObject("SELECT COUNT(*) FROM ai_knowledge_chunk",Long.class),"sync",syncStatus,"retrieval",retrievalMode,"syncing",ingesting.get());}
  public synchronized void refresh(){
@@ -48,15 +49,17 @@ public class CampusKnowledge {
   URI uri=allowed(seed.url());
   var req=HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(18)).header("User-Agent","SmartCampusKnowledge/1.0 (public campus guidance; low-rate)").GET().build();
   var response=http.send(req,HttpResponse.BodyHandlers.ofInputStream());
-  byte[] bytes;try(var in=response.body()){if(response.statusCode()!=200)throw new IllegalStateException("Source unavailable");bytes=in.readNBytes(4_000_001);}
-  if(bytes.length>4_000_000)throw new IllegalStateException("Source too large");
+  byte[] bytes;try(var in=response.body()){if(response.statusCode()!=200)throw new IllegalStateException("Source unavailable");bytes=in.readNBytes(50_000_001);}
+  if(bytes.length>50_000_000)throw new IllegalStateException("Source too large");
   String text;
   if(response.headers().firstValue("Content-Type").orElse("").contains("pdf")||uri.getPath().endsWith(".pdf")){
-   try(var pdf=org.apache.pdfbox.Loader.loadPDF(bytes)){var stripper=new org.apache.pdfbox.text.PDFTextStripper();stripper.setEndPage(Math.min(30,pdf.getNumberOfPages()));text=stripper.getText(pdf);}
+   try(var pdf=org.apache.pdfbox.Loader.loadPDF(bytes)){var stripper=new org.apache.pdfbox.text.PDFTextStripper();stripper.setEndPage(Math.min(60,pdf.getNumberOfPages()));text=stripper.getText(pdf);}
   }else{
    var doc=Jsoup.parse(new java.io.ByteArrayInputStream(bytes),null,seed.url());
    doc.select("script,style,nav,header,footer,.nav,.header,.footer,.sidebar").remove();
-   var content=doc.select("#vsb_content,.v_news_content,#content,.article-content,.article_content,.news_content,.read-content,main").stream().max(Comparator.comparingInt(e->e.text().length())).orElse(doc.body());
+   var content=doc.select("#vsb_content,[id^=vsb_content],.art-body,.v_news_content,.article-content,.article_content,.news_content,.read-content").stream().max(Comparator.comparingInt(e->e.text().length())).orElse(null);
+   if(content==null)content=doc.select("main,#content,.content").stream().max(Comparator.comparingInt(e->e.text().length())).orElse(doc.body());
+   content.select("td,th").forEach(cell->cell.appendText(" | "));
    text=content.wholeText();
    // Directory links remain useful as explicit entry points, not invented instructions.
    var links=content.select("a[href]");StringBuilder linked=new StringBuilder();
@@ -67,7 +70,7 @@ public class CampusKnowledge {
   if(text.length()<80)throw new IllegalStateException("No useful text");if(text.length()>100000)text=text.substring(0,100000);
   String hash=HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
   var old=db.queryForList("SELECT id,content_hash FROM ai_knowledge_source WHERE url=?",seed.url());
-  if(!old.isEmpty()&&hash.equals(old.get(0).get("content_hash"))){db.update("UPDATE ai_knowledge_source SET fetched_at=CURRENT_TIMESTAMP WHERE url=?",seed.url());return;}
+  if(!old.isEmpty()&&hash.equals(old.get(0).get("content_hash"))){db.update("UPDATE ai_knowledge_source SET title=?,campus=?,fetched_at=CURRENT_TIMESTAMP WHERE url=?",seed.title(),seed.campus(),seed.url());return;}
   var pieces=split(text);List<float[]> vectors=new ArrayList<>();
   for(String piece:pieces)vectors.add(embedding.embed(seed.title()+" "+piece,false));
   String body=text;
