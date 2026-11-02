@@ -93,3 +93,5 @@ onUnmounted(()=>{destroyed=true;controller?.abort();clearTimeout(reaction);windo
 <style scoped>.sea-text{white-space:normal}.sea-text :deep(p){margin:0 0 10px}.sea-text :deep(p:last-child){margin-bottom:0}.sea-text :deep(ul),.sea-text :deep(ol){padding-left:20px;margin:8px 0}.sea-text :deep(a){color:#4b817c;overflow-wrap:anywhere}.sea-text :deep(code){font-size:11px;background:#f0f3ed;border-radius:3px;padding:2px 4px}.sea-text :deep(pre){overflow:auto;white-space:pre-wrap}.sea-text :deep(h1),.sea-text :deep(h2),.sea-text :deep(h3){font-size:14px;margin:12px 0;letter-spacing:0;color:inherit;text-shadow:none}</style>
 
 <style scoped>@media(prefers-reduced-motion:reduce){.pet-character .pet-sprite,.pet-character.playful .pet-sprite{animation:none}}</style>
+
+<style scoped>.dragging .mermaid-stage :deep(*){animation-play-state:paused!important}.pet-character:hover .mermaid-stage{filter:drop-shadow(0 0 5px #b9e9e955)}.pet-character.playful .mermaid-stage{animation:gentle-release .75s ease-out}@keyframes gentle-release{0%{transform:rotate(-3deg)}40%{transform:translateY(-4px) rotate(1.5deg)}75%{transform:rotate(-.6deg)}100%{transform:none}}</style>
