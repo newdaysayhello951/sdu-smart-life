@@ -120,7 +120,7 @@ Java 21 / Spring Boot 3.5.7 / Spring AI 1.1.0；独立 multilingual-e5-small ONN
 1. `python scripts/setup_campus_ai.py` 安装校园项目独立模型和 Qdrant，默认从公开上游下载；Hugging Face 直连不可用时可设置 `HF_MIRROR=1` 使用镜像。
 2. 按 `.env.example` 在仓库根目录创建 `.env.ai`，填写自己的模型 API；只读取 LLM_BASE_URL、LLM_MODEL、LLM_API_KEY / DEEPSEEK_API_KEY，不复制其他项目环境、业务数据或服务。
 3. Maven 构建后，设置 `DB_PASSWORD`，运行 `powershell -ExecutionPolicy Bypass -File scripts/start_campus_ai.ps1 -StartBackend`。确保 8080 没有旧服务占用。单独启动依赖时不传 -StartBackend。
-4. 登录后点击可拖动的小海妖打开对话。海棠、山大红飘带与书本、青岛海鸥/海浪/贝壳装饰；眨眼、招手、摆尾、悬停及拖动反馈，不自动左右移动，可收起。
+4. 登录后点击可拖动的小海妖打开对话。海棠、山大红飘带与书本、青岛海鸥/海浪/贝壳装饰；单角色透明素材、小幅连续漂浮与拖动松开反馈，不自动左右移动，可收起。
 
 首次启动按 `campus-knowledge-sources.json` 低频采集山大官方公开指导资料；默认每天更新，失败保留已有版本。回答带来源、适用校区和采集时间。没有实时人数能力，重要政策应核对官方通知。只读 Agent 工具查询知识、地点、在发布商品/失物和本人通知；不会代发私信、修改资料或交易。每人一个并发回答，全局上限4，工具最多6次、规划最多3轮，支持取消和超时。界面安全渲染 Markdown，禁用HTML和图片注入，链接限制为本站业务入口和山大官方 HTTPS。
 
