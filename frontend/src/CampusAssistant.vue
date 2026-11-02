@@ -3,6 +3,8 @@ import {ref,onMounted,onUnmounted,nextTick} from 'vue';
 import {RouterLink} from 'vue-router';
 import axios from 'axios';
 import MarkdownIt from 'markdown-it';
+import MermaidEntrance from './MermaidEntrance.vue';
+const entrance=ref<InstanceType<typeof MermaidEntrance>|null>(null);
 const markdown=new MarkdownIt({html:false,linkify:false,breaks:true}).disable(['image']);
 markdown.renderer.rules.link_open=(tokens,idx)=>{const href=String(tokens[idx]!.attrGet('href')||'');let allowed=false;try{const u=new URL(href,window.location.origin);allowed=(u.origin===window.location.origin&&/^\/(campus|market|lost-found|notifications)([/?]|$)/.test(u.pathname))||(u.protocol==='https:'&&u.hostname.endsWith('.sdu.edu.cn'));}catch{}return allowed?'<a href="'+markdown.utils.escapeHtml(href)+'" target="_blank" rel="noopener noreferrer">':'<a>';};
 interface Source{number:number;title:string;url:string;campus:string;fetchedAt:string;excerpt:string}
@@ -64,13 +66,13 @@ onUnmounted(()=>{destroyed=true;controller?.abort();clearTimeout(reaction);windo
   <div v-else class="sea-pet" :class="{dragging,resting:open}" :style="{left:x+'px',top:y+'px'}">
    <span v-if="!open" class="pet-whisper">校园问题，问汐月</span>
    <button class="pet-character" aria-label="汐月校园助手，点击聊天或拖动移动" @pointerdown="down" @pointermove="move" @pointerup="up" @pointercancel="up" @click="click" :class="{playful}">
-    <span class="pet-sprite" role="img" aria-label="海棠与海鸥装饰的小海妖汐月"></span>
+    <MermaidEntrance ref="entrance" />
    </button>
    <button class="pet-hide" @click="hidden=true;open=false" aria-label="收起海妖助手">−</button>
   </div>
   <section v-if="open" class="sea-chat" role="dialog" aria-modal="false" aria-labelledby="sea-title" @keydown.esc="open=false">
    <header class="sea-header"><img src="/assets/assistant/sea-sprite-clean.png" alt=""><div><small>SDU · CAMPUS COMPANION</small><h2 id="sea-title">汐月 <span>你的校园小海妖</span></h2></div><button @click="open=false" aria-label="关闭问答弹窗">×</button></header>
-   <div class="sea-toolbar"><select v-model="conversationId" @change="changeConversation" :disabled="busy" aria-label="选择历史对话"><option value="">新的校园对话</option><option v-for="c in conversations" :value="c.id" :key="c.id">{{c.title}}</option></select><button :disabled="busy" @click="fresh">＋ 新对话</button></div>
+   <div class="sea-toolbar"><select v-model="conversationId" @change="changeConversation" :disabled="busy" aria-label="选择历史对话"><option value="">新的校园对话</option><option v-for="c in conversations" :value="c.id" :key="c.id">{{c.title}}</option></select><button :disabled="busy" @click="fresh">＋ 新对话</button><button type="button" @click="open=false;entrance?.replay()">重播出场</button></div>
    <div ref="transcript" class="sea-transcript" aria-live="polite" aria-relevant="additions text">
     <div v-if="!messages.length" class="sea-welcome"><span>☾</span><h3>你好呀，我是汐月。</h3><p>陪你找校园里的答案，也帮你找好物、找失物。<br>官方资料有出处，不确定的事情会告诉你。</p><div><button @click="send('山大本科生图书可以借多久？')" :disabled="busy">📖 借书可以借多久？</button><button @click="send('校园网总是需要重新认证怎么办？')" :disabled="busy">🌐 校园网连接问题</button><button @click="send('帮我找找有没有拾到钥匙的招领信息')" :disabled="busy">🗝 寻找遗失的钥匙</button></div></div>
     <article v-for="(m,index) in messages" :key="index" class="sea-message" :class="m.role"><img v-if="m.role==='assistant'" class="sea-avatar" src="/assets/assistant/sea-sprite-clean.png" alt="汐月"><div class="message-main"><small>{{m.role==='user'?'我':'汐月'}}</small><div class="sea-text" v-html="markdown.render(m.content|| (busy&&index===messages.length-1?'正在寻找答案…':'这条回答未完成，请重新提问。'))"></div><div v-if="m.metadata?.cards?.length" class="sea-cards"><RouterLink v-for="card in m.metadata.cards" :key="card.url" :to="safeCard(card.url)" @click="open=false"><img v-if="card.imageUrl?.startsWith('/api/')||card.imageUrl?.startsWith('/assets/')" :src="card.imageUrl" alt=""><span><b>{{card.title}}</b><small>{{card.subtitle}}</small></span><span>↗</span></RouterLink></div><details v-if="m.metadata?.sources?.length" class="sea-sources"><summary>参考资料 · {{m.metadata.sources.length}} 个片段</summary><div v-for="source in m.metadata.sources" :key="source.number"><a :href="safeSource(source.url)" target="_blank" rel="noopener noreferrer">[{{source.number}}] {{source.title}} ↗</a><small>{{source.campus}} · 采集于 {{source.fetchedAt}}</small><p>{{source.excerpt}}</p></div></details></div></article>
