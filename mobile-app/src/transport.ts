@@ -49,7 +49,7 @@ class NativeEventSource extends EventTarget {
 export function installTransport(){
  axios.defaults.withCredentials=true;axios.defaults.timeout=25000;
  if(!native)return;
- axios.interceptors.request.use(config=>{if(config.method&&config.method.toLowerCase()!=='get')imageDownloads.clear();if(config.url?.startsWith('/api/'))config.url=apiUrl(config.url);return config;});
+ axios.interceptors.request.use(config=>{if(config.method&&config.method.toLowerCase()!=='get'&&/^\/api\/(auth\/(login|logout)|profile|my\/products)/.test(config.url||''))imageDownloads.clear();if(config.url?.startsWith('/api/'))config.url=apiUrl(config.url);return config;});
  window.EventSource=NativeEventSource as unknown as typeof EventSource;
  window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{const path=typeof input==='string'?input:input instanceof URL?input.href:input.url;if(path==='/api/assistant/ask')return streamedFetch(path,init);if(path.startsWith('/api/'))return webFetch(apiUrl(path),init);return webFetch(input,init);}) as typeof fetch;
 }
@@ -57,8 +57,9 @@ export function installTransport(){
 let imageRunning=0;
 const imageWaiters:Array<()=>void>=[];
 const imageDownloads=new Map<string,{at:number;job:ReturnType<typeof CapacitorHttp.get>}>();
-async function downloadImage(path:string){
- const optimized=/^\/api\/images\/product\/\d+$/.test(path)?path+'?w=960':path;
+async function downloadImage(path:string,original=false){
+ const separator=path.includes('?')?'&':'?';
+ const optimized=original?path:/^\/api\/(profile\/avatar|conversations\/avatars\/\d+)(\?|$)/.test(path)?path+separator+'w=160':/^\/api\/images\/product\/\d+$/.test(path)?path+'?w=960':/^\/api\/conversations\/\d+\/image$/.test(path)?path+'?w=640':path;
  const key=apiUrl(optimized),cached=imageDownloads.get(key);
  if(cached&&Date.now()-cached.at<30000)return cached.job;
  const job=(async()=>{if(imageRunning>=4)await new Promise<void>(resolve=>imageWaiters.push(resolve));else imageRunning++;
@@ -71,5 +72,7 @@ type ImageState={version:number;objectUrl?:string;path?:string};
 const imageState=new WeakMap<HTMLImageElement,ImageState>();
 async function updateImage(el:HTMLImageElement,value:unknown){const path=String(value||'');let state=imageState.get(el);if(!state){state={version:0};imageState.set(el,state);}if(state.path===path)return;state.path=path;const n=++state.version;if(state.objectUrl){URL.revokeObjectURL(state.objectUrl);state.objectUrl=undefined;}el.removeAttribute('src');
  if(!path)return;if(!native||!isApiPath(path)){el.src=path;return;}
- try{const result=await downloadImage(path);if(state.version!==n||result.status!==200)return;const type=Object.entries(result.headers).find(([k])=>k.toLowerCase()==='content-type')?.[1]||'image/png';if(!type.startsWith('image/'))return;const bytes=Uint8Array.from(atob(result.data),c=>c.charCodeAt(0));state.objectUrl=URL.createObjectURL(new Blob([bytes],{type}));el.src=state.objectUrl;}catch{el.alt=el.alt||'图片加载失败';}}
-export const mobileSrc:ObjectDirective<HTMLImageElement,unknown>={mounted(el,b){void updateImage(el,b.value);},updated(el,b){void updateImage(el,b.value);},unmounted(el){const state=imageState.get(el);if(state){state.version++;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);}imageState.delete(el);}};
+ try{const result=await downloadImage(path,!!el.closest('.image-viewer'));if(state.version!==n||result.status!==200)return;const type=Object.entries(result.headers).find(([k])=>k.toLowerCase()==='content-type')?.[1]||'image/png';if(!type.startsWith('image/'))return;const bytes=Uint8Array.from(atob(result.data),c=>c.charCodeAt(0));state.objectUrl=URL.createObjectURL(new Blob([bytes],{type}));el.src=state.objectUrl;}catch{el.alt=el.alt||'图片加载失败';}}
+const lazyObservers=new WeakMap<HTMLImageElement,IntersectionObserver>();
+const lazyValues=new WeakMap<HTMLImageElement,unknown>();
+export const mobileSrc:ObjectDirective<HTMLImageElement,unknown>={mounted(el,b){el.loading='lazy';if(typeof IntersectionObserver==='undefined'){void updateImage(el,b.value);return;}let value=b.value;lazyValues.set(el,value);const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();lazyObservers.delete(el);void updateImage(el,lazyValues.get(el));lazyValues.delete(el);}},{rootMargin:'200px'});lazyObservers.set(el,observer);observer.observe(el);},updated(el,b){if(lazyObservers.has(el))lazyValues.set(el,b.value);else void updateImage(el,b.value);},unmounted(el){lazyObservers.get(el)?.disconnect();lazyObservers.delete(el);lazyValues.delete(el);const state=imageState.get(el);if(state){state.version++;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);}imageState.delete(el);}};

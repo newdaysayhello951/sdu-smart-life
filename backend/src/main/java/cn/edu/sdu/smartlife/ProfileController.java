@@ -35,7 +35,7 @@ public class ProfileController {
   catch(javax.imageio.IIOException e){throw new ResponseStatusException(HttpStatus.BAD_REQUEST);}
   var out=new ByteArrayOutputStream();ImageIO.write(image,"png",out);if(out.size()>16*1024*1024)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);profiles.avatar(CurrentUser.id(p),out.toByteArray());
  }
- @GetMapping("/avatar") public ResponseEntity<byte[]> avatar(Principal p) throws IOException {var stored=profiles.avatarData(CurrentUser.id(p));byte[] data=stored==null?null:stored.data();if(data==null){try(var in=getClass().getResourceAsStream("/default-avatar.jpg")){data=in.readAllBytes();}return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(data);}return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_PNG).body(data);}
+ @GetMapping("/avatar") public ResponseEntity<byte[]> avatar(Principal p,@RequestParam(defaultValue="0") int w) throws IOException {var stored=profiles.avatarData(CurrentUser.id(p));byte[] data=stored==null?null:stored.data();if(data==null){try(var in=getClass().getResourceAsStream("/default-avatar.jpg")){data=in.readAllBytes();}return ImagePreview.response(data,"image/jpeg",w);}return ImagePreview.response(data,"image/png",w);}
 }
 @Mapper
 interface ProfileMapper {

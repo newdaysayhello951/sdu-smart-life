@@ -36,8 +36,8 @@ public class ConversationController {
  }
  db.add(input.placeId(),CurrentUser.id(principal),input.content().trim(),input.parentId(),root,bytes,mime);long id=db.last();if(input.parentId()!=null){var parent=db.find(input.parentId());long self=CurrentUser.id(principal);if(parent.userId()!=self){db.notifyReply(parent.userId(),"你的校园发言收到回复","/campus/"+input.placeId()+"/conversations/"+root+"?focus="+id);realtime.changed(parent.userId(),"reply",null);} }return Map.of("id",id,"rootId",root==null?id:root);
  }
- @GetMapping("/{id}/image") public ResponseEntity<byte[]> image(@PathVariable long id){var data=db.media(id);if(data==null||data.data()==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.parseMediaType(data.mime())).header("X-Content-Type-Options","nosniff").body(data.data());}
- @GetMapping("/avatars/{id}") public ResponseEntity<byte[]> avatar(@PathVariable long id) throws IOException{var stored=db.avatar(id);byte[] data=stored==null?null:stored.data();if(data==null){try(var in=getClass().getResourceAsStream("/default-avatar.jpg")){return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(in.readAllBytes());}}return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).cacheControl(CacheControl.noStore()).body(data);}
+ @GetMapping("/{id}/image") public ResponseEntity<byte[]> image(@PathVariable long id,@RequestParam(defaultValue="0") int w) throws IOException {var data=db.media(id);if(data==null||data.data()==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND);return ImagePreview.response(data.data(),data.mime(),w);}
+ @GetMapping("/avatars/{id}") public ResponseEntity<byte[]> avatar(@PathVariable long id,@RequestParam(defaultValue="0") int w) throws IOException{var stored=db.avatar(id);byte[] data=stored==null?null:stored.data();if(data==null){try(var in=getClass().getResourceAsStream("/default-avatar.jpg")){return ImagePreview.response(in.readAllBytes(),"image/jpeg",w);}}return ImagePreview.response(data,"image/png",w);}
 }
 @Mapper
 interface ConversationMapper {
