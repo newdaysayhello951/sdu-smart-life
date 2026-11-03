@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeServer,isApiPath,parseSse} from '../src/network-policy.mjs';
+import {normalizeServer,isApiPath,parseSse,optimizedImagePath} from '../src/network-policy.mjs';
 test('production server addresses require a bare HTTPS origin',()=>{
  assert.equal(normalizeServer('https://campus.example.com/'),'https://campus.example.com');
  for(const value of ['http://campus.example.com','https://user:pass@example.com','https://example.com/api','https://example.com/?token=x','https://example.com/#x','file:///x','javascript:alert(1)'])assert.throws(()=>normalizeServer(value));
@@ -18,4 +18,12 @@ test('SSE parser preserves multiline data and ignores heartbeat comments',()=>{
 test('only relative campus API paths are rewritten',()=>{
  assert.equal(isApiPath('/api/products/1/image'),true);
  for(const value of ['//example.com/api/x','https://example.com/api/x','/assets/image.png','/api\\x','/api/x\r\n'])assert.equal(isApiPath(value),false);
+});
+
+test('all avatar and media routes select previews while originals stay untouched',()=>{
+ assert.equal(optimizedImagePath('/api/profile/avatar?v=2'),'/api/profile/avatar?v=2&w=160');
+ assert.equal(optimizedImagePath('/api/conversations/avatars/12'),'/api/conversations/avatars/12?w=160');
+ assert.equal(optimizedImagePath('/api/images/product/4'),'/api/images/product/4?w=960');
+ assert.equal(optimizedImagePath('/api/conversations/9/image'),'/api/conversations/9/image?w=640');
+ assert.equal(optimizedImagePath('/api/conversations/9/image',true),'/api/conversations/9/image');
 });

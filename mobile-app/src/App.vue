@@ -3,9 +3,11 @@ import {ref,computed,onMounted,onUnmounted,watch} from 'vue';
 import {useRoute,useRouter,RouterLink,RouterView} from 'vue-router';
 import axios from 'axios';
 import {CapacitorCookies} from '@capacitor/core';
-import {native,serverOrigin,saveServer} from './transport';
+import {native,serverOrigin,saveServer,binaryImageUrl} from './transport';
 import CampusAssistant from '../../frontend/src/CampusAssistant.vue';
 import {startRealtime,stopRealtime} from '../../frontend/src/realtime';
+const diagnostics=ref(''),diagnosing=ref(false);
+async function diagnose(){diagnosing.value=true;const results=['Android / Web build 038'];try{for(let n=0;n<3;n++){const start=performance.now();await axios.get('/api/auth/csrf');results.push('接口往返 '+(n+1)+'：'+Math.round(performance.now()-start)+'ms');}if(native){const start=performance.now();await new Promise<void>((resolve,reject)=>{const image=new Image();image.onload=()=>resolve();image.onerror=()=>reject(Error('头像连接失败'));image.src=binaryImageUrl('/api/profile/avatar');});results.push('头像显示（可能缓存）：'+Math.round(performance.now()-start)+'ms');}}catch(e){results.push(e instanceof Error?e.message:'连接失败');}diagnostics.value=results.join('\n');diagnosing.value=false;}
 const route=useRoute(),router=useRouter();
 const user=ref(''),checking=ref(true),busy=ref(false),registering=ref(false),username=ref(''),password=ref(''),error=ref(''),unread=ref(0),avatar=ref(0),online=ref(navigator.onLine);
 const settings=ref(native&&!serverOrigin()),server=ref(serverOrigin()||'http://10.0.2.2:8080'),settingsError=ref('');
@@ -37,7 +39,7 @@ onUnmounted(()=>{stopRealtime();axios.interceptors.response.eject(interceptor);w
  <main v-else class="mobile-content">
   <template v-if="route.path==='/'"><section class="mobile-hero"><p>QINGDAO · MY CAMPUS</p><h1>在山大，<br>发现日常的<span>更多可能。</span></h1><span>让闲置流转，让答案相遇。</span><RouterLink to="/market">发现校园好物 ↗</RouterLink></section><section class="mobile-home-grid"><RouterLink to="/market"><i>◇</i><strong>校园好物</strong><span>闲置转让 · 求购心愿</span></RouterLink><RouterLink to="/lost-found"><i>❀</i><strong>失物回家</strong><span>海棠猫陪宝贝回家</span></RouterLink><RouterLink to="/campus"><i>⌖</i><strong>山海地图</strong><span>在每一个地点找到答案</span></RouterLink><RouterLink to="/notifications"><i>☏</i><strong>校园消息</strong><span>私聊与地点回复</span></RouterLink></section><section class="mobile-home-note"><p class="mobile-eyebrow">TOGETHER IN SDU</p><h2>校园生活，有你参与。</h2><p>发布一件好物，解答一个疑问，<br>或让一份遗失的牵挂重新回家。</p><RouterLink to="/my/products">去我的主页发布 →</RouterLink></section></template>
   <section v-if="route.path==='/my/products'" class="mobile-account"><img v-mobile-src="'/api/profile/avatar?v='+avatar" alt="我的头像"><div><strong>{{user}}</strong><small>山东大学 · 我的校园日常</small></div><button @click="logout" :disabled="busy">退出</button></section>
-  <RouterView v-if="route.path!=='/'" :key="user"/>
+  <section v-if="route.path==='/my/products'" style="padding:8px 20px"><button @click="diagnose" :disabled="diagnosing">{{diagnosing?'检测中…':'连接诊断 · 038'}}</button><pre v-if="diagnostics" style="white-space:pre-wrap">{{diagnostics}}</pre></section><RouterView v-if="route.path!=='/'" :key="user"/>
  </main>
  <nav v-if="user" class="mobile-tabs" aria-label="手机主导航"><RouterLink v-for="tab in tabs" :key="tab.to" :to="tab.to" :class="{current:tab.to==='/'?route.path==='/':route.path.startsWith(tab.to)}"><span aria-hidden="true">{{tab.icon}}</span>{{tab.label}}</RouterLink></nav>
  <CampusAssistant v-if="user&&!checking" :key="user"/>

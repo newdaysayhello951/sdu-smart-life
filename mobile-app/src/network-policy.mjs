@@ -14,3 +14,9 @@ export function parseSse(block) {
   }
   return data.length ? {event, data:data.join('\n')} : null;
 }
+
+export function optimizedImagePath(path,original=false){
+ const separator=path.includes('?')?'&':'?';
+ const optimized=original?path:/^\/api\/(profile\/avatar|conversations\/avatars\/\d+)(\?|$)/.test(path)?path+separator+'w=160':/^\/api\/images\/product\/\d+$/.test(path)?path+'?w=960':/^\/api\/conversations\/\d+\/image$/.test(path)?path+'?w=640':path;
+ return optimized;
+}
