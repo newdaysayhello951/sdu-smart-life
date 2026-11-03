@@ -49,14 +49,27 @@ class NativeEventSource extends EventTarget {
 export function installTransport(){
  axios.defaults.withCredentials=true;axios.defaults.timeout=25000;
  if(!native)return;
- axios.interceptors.request.use(config=>{if(config.url?.startsWith('/api/'))config.url=apiUrl(config.url);return config;});
+ axios.interceptors.request.use(config=>{if(config.method&&config.method.toLowerCase()!=='get')imageDownloads.clear();if(config.url?.startsWith('/api/'))config.url=apiUrl(config.url);return config;});
  window.EventSource=NativeEventSource as unknown as typeof EventSource;
  window.fetch=((input:RequestInfo|URL,init?:RequestInit)=>{const path=typeof input==='string'?input:input instanceof URL?input.href:input.url;if(path==='/api/assistant/ask')return streamedFetch(path,init);if(path.startsWith('/api/'))return webFetch(apiUrl(path),init);return webFetch(input,init);}) as typeof fetch;
 }
 
+let imageRunning=0;
+const imageWaiters:Array<()=>void>=[];
+const imageDownloads=new Map<string,{at:number;job:ReturnType<typeof CapacitorHttp.get>}>();
+async function downloadImage(path:string){
+ const optimized=/^\/api\/images\/product\/\d+$/.test(path)?path+'?w=960':path;
+ const key=apiUrl(optimized),cached=imageDownloads.get(key);
+ if(cached&&Date.now()-cached.at<30000)return cached.job;
+ const job=(async()=>{if(imageRunning>=4)await new Promise<void>(resolve=>imageWaiters.push(resolve));else imageRunning++;
+ try{return await CapacitorHttp.get({url:key,responseType:'arraybuffer',connectTimeout:10000,readTimeout:20000,disableRedirects:true});}
+ finally{const next=imageWaiters.shift();if(next)next();else imageRunning--;}})();
+ imageDownloads.set(key,{at:Date.now(),job});while(imageDownloads.size>24)imageDownloads.delete(imageDownloads.keys().next().value!);
+ void job.then(r=>{if(r.status!==200&&imageDownloads.get(key)?.job===job)imageDownloads.delete(key);},()=>{if(imageDownloads.get(key)?.job===job)imageDownloads.delete(key);});return job;
+}
 type ImageState={version:number;objectUrl?:string;path?:string};
 const imageState=new WeakMap<HTMLImageElement,ImageState>();
 async function updateImage(el:HTMLImageElement,value:unknown){const path=String(value||'');let state=imageState.get(el);if(!state){state={version:0};imageState.set(el,state);}if(state.path===path)return;state.path=path;const n=++state.version;if(state.objectUrl){URL.revokeObjectURL(state.objectUrl);state.objectUrl=undefined;}el.removeAttribute('src');
  if(!path)return;if(!native||!isApiPath(path)){el.src=path;return;}
- try{const result=await CapacitorHttp.get({url:apiUrl(path),responseType:'arraybuffer',connectTimeout:10000,readTimeout:20000,disableRedirects:true});if(state.version!==n||result.status!==200)return;const type=Object.entries(result.headers).find(([k])=>k.toLowerCase()==='content-type')?.[1]||'image/png';if(!type.startsWith('image/'))return;const bytes=Uint8Array.from(atob(result.data),c=>c.charCodeAt(0));state.objectUrl=URL.createObjectURL(new Blob([bytes],{type}));el.src=state.objectUrl;}catch{el.alt=el.alt||'图片加载失败';}}
+ try{const result=await downloadImage(path);if(state.version!==n||result.status!==200)return;const type=Object.entries(result.headers).find(([k])=>k.toLowerCase()==='content-type')?.[1]||'image/png';if(!type.startsWith('image/'))return;const bytes=Uint8Array.from(atob(result.data),c=>c.charCodeAt(0));state.objectUrl=URL.createObjectURL(new Blob([bytes],{type}));el.src=state.objectUrl;}catch{el.alt=el.alt||'图片加载失败';}}
 export const mobileSrc:ObjectDirective<HTMLImageElement,unknown>={mounted(el,b){void updateImage(el,b.value);},updated(el,b){void updateImage(el,b.value);},unmounted(el){const state=imageState.get(el);if(state){state.version++;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);}imageState.delete(el);}};

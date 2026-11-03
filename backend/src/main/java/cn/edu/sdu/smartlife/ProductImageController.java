@@ -30,8 +30,19 @@ public class ProductImageController {
   if(products.image(id,owner,url)!=1)throw new ResponseStatusException(HttpStatus.CONFLICT);
   images.save(id,output.toByteArray());return Map.of("imageUrl",url);
  }
- @GetMapping("/api/images/product/{id}") public ResponseEntity<byte[]> image(@PathVariable long id){
+ @GetMapping("/api/images/product/{id}") public ResponseEntity<byte[]> image(@PathVariable long id,@RequestParam(defaultValue="0") int w) throws IOException {
   var image=images.find(id);if(image==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+  if(w<0||w>1280)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"图片尺寸无效");
+  if(w>0){
+   var source=ImageIO.read(new ByteArrayInputStream(image.data()));
+   if(source!=null){
+    double ratio=Math.min(1.0,(double)w/Math.max(source.getWidth(),source.getHeight()));
+    var small=new java.awt.image.BufferedImage(Math.max(1,(int)(source.getWidth()*ratio)),Math.max(1,(int)(source.getHeight()*ratio)),java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var g=small.createGraphics();try{g.setColor(java.awt.Color.WHITE);g.fillRect(0,0,small.getWidth(),small.getHeight());g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);g.drawImage(source,0,0,small.getWidth(),small.getHeight(),null);}finally{g.dispose();}
+    var bytes=new ByteArrayOutputStream();ImageIO.write(small,"jpeg",bytes);
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).header("X-Content-Type-Options","nosniff").body(bytes.toByteArray());
+   }
+  }
   return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.parseMediaType(image.contentType())).header("X-Content-Type-Options","nosniff").body(image.data());
  }
 }
